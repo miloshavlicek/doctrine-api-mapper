@@ -91,7 +91,7 @@ abstract class AEntityRequest
 
     protected function checkUserRequirement(): void
     {
-        if (!$this->user) {
+        if ($this->userRequired && !$this->user) {
             throw new AuthenticationException('User not authenticated.');
         }
     }
@@ -121,9 +121,9 @@ abstract class AEntityRequest
     }
 
     /**
-     * @param UserInterface $user
+     * @param UserInterface|null $user
      */
-    public function setUser(UserInterface $user): void
+    public function setUser(?UserInterface $user): void
     {
         $this->user = $user;
         if ($this->repository) {
