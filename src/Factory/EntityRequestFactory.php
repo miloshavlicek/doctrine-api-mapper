@@ -8,6 +8,7 @@ use Miloshavlicek\DoctrineApiMapper\Params\OptionsParams;
 use Miloshavlicek\DoctrineApiMapper\Params\PatchParams;
 use Miloshavlicek\DoctrineApiMapper\Params\PostParams;
 use Miloshavlicek\DoctrineApiMapper\Params\PutParams;
+use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Miloshavlicek\DoctrineApiMapper\Request\DeleteEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\GetEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\IEntityRequest;
@@ -15,7 +16,6 @@ use Miloshavlicek\DoctrineApiMapper\Request\OptionsEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\PatchEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\PostEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\PutEntityRequest;
-use Miloshavlicek\DoctrineApiMapper\IApiRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
@@ -45,13 +45,17 @@ class EntityRequestFactory
 
     /**
      * @param string $method
-     * @param string $entity
+     * @param string $repository
      * @param array $filter
      * @return IEntityRequest
      * @throws \Exception
      */
-    public function create(string $method, string $entity, array $filter = []): IEntityRequest
+    public function create(string $method, IApiRepository $repository, array $filter = []): IEntityRequest
     {
+        if (!($repository instanceof IApiRepository)) {
+            throw new \Exception('Repository have to be instanceof IApiRepository');
+        }
+
         switch ($method) {
             case 'GET':
                 $class = GetEntityRequest::class;
@@ -84,13 +88,7 @@ class EntityRequestFactory
 
         $solver = new $class($this->paramFetcher, new $params($this->paramFetcher), $this->em, $this->translator);
 
-        $solver->setEntity($entity);
-
-        $repository = $this->em->getRepository($entity);
-
-        if ($repository instanceof IApiRepository) {
-            $solver->setRepository($repository);
-        }
+        $solver->setRepository($repository);
 
         if (count($filter) && $method === 'GET') {
             $solver->setFilter($filter);

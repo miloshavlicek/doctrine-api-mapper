@@ -2,13 +2,13 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
-use Miloshavlicek\DoctrineApiMapper\Params\IParams;
-use Miloshavlicek\DoctrineApiMapper\Schema\DefaultSchema;
-use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
-use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
-use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
+use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
+use Miloshavlicek\DoctrineApiMapper\Params\IParams;
+use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
+use Miloshavlicek\DoctrineApiMapper\Schema\DefaultSchema;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -48,9 +48,6 @@ abstract class AEntityRequest
     /** @var IApiRepository */
     protected $repository;
 
-    /** @var string */
-    protected $entity;
-
     /** @var TranslatorInterface */
     private $translator;
 
@@ -83,7 +80,7 @@ abstract class AEntityRequest
             $this->schema = DefaultSchema::class;
         }
         $this->checkUserRequirement();
-        $this->params->setEntity($this->entity);
+        $this->params->setRepository($this->repository);
         $this->params->init($this->schema);
         $this->solveIt();
         return $this->getResponse();
@@ -126,7 +123,7 @@ abstract class AEntityRequest
     public function setUser(?UserInterface $user): void
     {
         $this->user = $user;
-        if ($this->repository) {
+        if ($this->repository && method_exists($this->repository, 'setUser')) {
             $this->repository->setUser($user);
         }
     }
@@ -161,7 +158,7 @@ abstract class AEntityRequest
     public function setRepository(?IApiRepository $repository): void
     {
         $this->repository = $repository;
-        if ($this->user) {
+        if ($this->user && method_exists($this->repository, 'setUser')) {
             $this->repository->setUser($this->user);
         }
     }
@@ -172,14 +169,6 @@ abstract class AEntityRequest
     public function getEntity(): string
     {
         return $this->entity;
-    }
-
-    /**
-     * @param string $entity
-     */
-    public function setEntity(string $entity): void
-    {
-        $this->entity = $entity;
     }
 
     /**

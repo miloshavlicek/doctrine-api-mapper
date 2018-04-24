@@ -5,6 +5,7 @@ namespace Miloshavlicek\DoctrineApiMapper\Params;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Controller\Annotations\RequestParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
 abstract class AParams
 {
@@ -13,7 +14,7 @@ abstract class AParams
     protected $isRequest = false;
 
     /** @var string */
-    protected $entity;
+    protected $repository;
 
     /** @var ParamFetcherInterface */
     protected $paramFetcher;
@@ -59,25 +60,25 @@ abstract class AParams
     /**
      * @return string
      */
-    public function getEntity(): string
+    public function getRepository(): ?IApiRepository
     {
-        return $this->entity;
+        return $this->repository;
     }
 
     /**
-     * @param string $entity
+     * @param IApiRepository $entity
      */
-    public function setEntity(string $entity): void
+    public function setRepository(IApiRepository $repository): void
     {
-        $this->entity = $entity;
+        $this->repository = $repository;
     }
 
     /**
      * @param string $prefix
      */
-    protected function attachAllEntityReadPropertiesToUrl(string $prefix = ''): void
+    protected function attachAllRepositoryReadPropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->entity::getEntityReadProperties(), $prefix);
+        $this->attachPropertiesToUrl($this->repository::getEntityReadProperties(), $prefix);
     }
 
     /**
@@ -106,9 +107,9 @@ abstract class AParams
     /**
      * @param string $prefix
      */
-    protected function attachAllEntityWritePropertiesToUrl(string $prefix = ''): void
+    protected function attachAllRepositoryWritePropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->entity::getEntityWriteProperties(), $prefix);
+        $this->attachPropertiesToUrl($this->repository::getEntityWriteProperties(), $prefix);
     }
 
 }

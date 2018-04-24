@@ -2,13 +2,11 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
-use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
+use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
+use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
-use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 
 class GetEntityRequest extends AEntityRequest implements IEntityRequest
 {
@@ -76,7 +74,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
      */
     protected function solveIt(): void
     {
-        $qb = $this->prepareQueryBuilder($this->entity);
+        $qb = $this->prepareQueryBuilder();
 
         if ($this->showCountInResult) {
             // TODO: optimize
@@ -106,17 +104,15 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     }
 
     /**
-     * @param string $entity
+     * @param IApiRepository $repository
      * @return QueryBuilder
      */
-    private function prepareQueryBuilder(string $entity): QueryBuilder
+    private function prepareQueryBuilder(): QueryBuilder
     {
-        $rep = $this->em->getRepository($entity);
-
         /** @var QueryBuilder $qb */
-        $qb = $rep->createQueryBuilder('e');
+        $qb = $this->repository->createQueryBuilder('e');
 
-        $this->mapCriteria($qb, $entity, $this->schema::FILTER_PREFIX);
+        $this->mapCriteria($qb, $this->schema::FILTER_PREFIX);
 
         $paramCounter = 1;
         foreach ($this->filter as $filterKey => $filterValue) {
@@ -139,13 +135,12 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
     /**
      * @param QueryBuilder $qb
-     * @param string $entity
      * @param string $filterPrefix
      */
-    private function mapCriteria(QueryBuilder $qb, string $entity, string $filterPrefix)
+    private function mapCriteria(QueryBuilder $qb, string $filterPrefix)
     {
         $criteria = [];
-        foreach ($entity::getEntityReadProperties() as $property) {
+        foreach ($this->repository::getEntityReadProperties() as $property) {
             if ($this->paramFetcher->get($filterPrefix . $property) !== null) {
                 $criteria[ParamToEntityMethod::translate($property)] = $this->paramFetcher->get($filterPrefix . $property);
             }
@@ -165,64 +160,35 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
      */
     private function mapEntityGet($entity, array $params)
     {
-        $params && $this->checkMapEntityParamsValidity(get_class($entity), $params);
+        $params && $this->checkMapEntityParamsValidity($params);
         return (new ParamToEntityMethod($entity, $params))->resolveGet();
     }
 
     /**
-     * @param string $entity
      * @param array $params
      */
-    private function checkMapEntityParamsValidity(string $entity, array $params)
+    private function checkMapEntityParamsValidity(array $params)
     {
         foreach ($params as $param) {
             $explodes = explode('.', $param);
 
             $level = 0;
-            $innerEntity = $entity;
+            $innerRepository = $this->repository;
             foreach ($explodes as $explode) {
                 $level++;
                 if ($level < count($explodes)) {
-                    if (!in_array($explode . '.', $innerEntity::getEntityReadProperties())) {
+                    if (!in_array($explode . '.', $innerRepository::getEntityReadProperties())) {
                         throw new BadRequestHttpException(sprintf('Property "%s" not supported.', $param));
                     }
 
-                    $innerEntity = $this->solveReturnTypes($innerEntity, $explode)[0]->getClassName();
+                    $innerRepository = $innerRepository::getEntityJoin($property);
                 } else {
-                    if (!in_array($explode, $innerEntity::getEntityReadProperties())) {
+                    if (!in_array($explode, $innerRepository::getEntityReadProperties())) {
                         throw new BadRequestHttpException(sprintf('Property "%s" not supported.', $param));
                     }
                 }
             }
         }
-    }
-
-    /**
-     * @param string $entity
-     * @param string $property
-     * @return mixed|null|\Symfony\Component\PropertyInfo\Type[]
-     */
-    private function solveReturnTypes(string $entity, string $property)
-    {
-        $phpDocExtractor = new PhpDocExtractor();
-        $reflectionExtractor = new ReflectionExtractor();
-
-        $listExtractors = [$reflectionExtractor];
-
-        $typeExtractors = [$phpDocExtractor, $reflectionExtractor];
-
-        $descriptionExtractors = [$phpDocExtractor];
-
-        $accessExtractors = [$reflectionExtractor];
-
-        $propertyInfo = new PropertyInfoExtractor(
-            $listExtractors,
-            $typeExtractors,
-            $descriptionExtractors,
-            $accessExtractors
-        );
-
-        return $propertyInfo->getTypes($entity, $property);
     }
 
 }

@@ -3,6 +3,7 @@
 namespace Miloshavlicek\DoctrineApiMapper\Params;
 
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
 interface IParams
 {
@@ -11,8 +12,8 @@ interface IParams
 
     public function init(string $schema): void;
 
-    public function getEntity(): string;
+    public function getRepository(): ?IApiRepository;
 
-    public function setEntity(string $entity);
+    public function setRepository(IApiRepository $entity);
 
 }

@@ -102,7 +102,7 @@ class GetParams extends AParams implements IParams
     {
         $schema = $this->schema;
 
-        $this->attachAllEntityReadPropertiesToUrl($schema::FILTER_PREFIX);
+        $this->attachAllRepositoryReadPropertiesToUrl($schema::FILTER_PREFIX);
 
         $paramFetcher = $this->paramFetcher;
 

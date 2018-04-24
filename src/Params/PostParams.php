@@ -21,7 +21,7 @@ class PostParams extends AParams implements IParams
 
     private function declareUrlParameters()
     {
-        $this->attachAllEntityWritePropertiesToUrl($this->schema::ENTITY_PREFIX);
+        $this->attachAllRepositoryWritePropertiesToUrl($this->schema::ENTITY_PREFIX);
     }
 
 }

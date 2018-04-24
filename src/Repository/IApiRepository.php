@@ -13,8 +13,4 @@ interface IApiRepository
 
     public function add($entity);
 
-    public function getUser(): ?UserInterface;
-
-    public function setUser(?UserInterface $user);
-
 }

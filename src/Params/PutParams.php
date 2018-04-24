@@ -28,7 +28,7 @@ class PutParams extends AParams implements IParams
         $dynamicParam->nullable = true;
         $this->paramFetcher->addParam($dynamicParam);
 
-        $this->attachAllEntityWritePropertiesToUrl($this->schema::ENTITY_PREFIX);
+        $this->attachAllRepositoryWritePropertiesToUrl($this->schema::ENTITY_PREFIX);
     }
 
 }
