@@ -50,7 +50,7 @@ class EntityRequestFactory
      * @return IEntityRequest
      * @throws \Exception
      */
-    public function create(string $method, IApiRepository $repository, array $filter = []): IEntityRequest
+    public function create(string $method, IApiRepository $repository, array $filter = [], string $filterOperators = 'AND'): IEntityRequest
     {
         if (!($repository instanceof IApiRepository)) {
             throw new \Exception('Repository have to be instanceof IApiRepository');
@@ -91,7 +91,7 @@ class EntityRequestFactory
         $solver->setRepository($repository);
 
         if (count($filter) && $method === 'GET') {
-            $solver->setFilter($filter);
+            $solver->setFilter($filter, $filterOperators);
         } elseif (count($filter)) {
             throw new \Exception('Filter appliable only for GET queries.');
         }

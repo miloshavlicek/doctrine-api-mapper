@@ -14,6 +14,9 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     /** @var array */
     private $filter = [];
 
+    /** @var string */
+    private $filterOperator = 'AND';
+
     /** @var bool */
     private $showCountInResult = true;
 
@@ -46,10 +49,12 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
     /**
      * @param array $filter
+     * @param string $filterOperators
      */
-    public function setFilter(array $filter): void
+    public function setFilter(array $filter, string $filterOperator = 'AND'): void
     {
         $this->filter = $filter;
+        $this->filterOperator = $filterOperator;
     }
 
     /**
@@ -115,12 +120,21 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
         $this->mapCriteria($qb, $this->schema::FILTER_PREFIX);
 
         $paramCounter = 1;
+        $qbEq = [];
         foreach ($this->filter as $filterKey => $filterValue) {
-            $qb->andWhere(
-                $qb->expr()->eq('e.' . $filterKey, ':filter_' . $paramCounter)
-            );
+            if(is_array($filterValue)) {
+                $qbEq[] = $qb->expr()->in('e.' . $filterKey, ':filter_' . $paramCounter);
+            } else {
+                $qbEq[] = $qb->expr()->eq('e.' . $filterKey, ':filter_' . $paramCounter);
+            }
             $qb->setParameter('filter_' . $paramCounter, $filterValue);
             $paramCounter++;
+        }
+
+        if ($this->filterOperator === 'OR') {
+            $qb->andWhere(implode(' OR ', $qbEq));
+        } else {
+            $qb->andWhere(implode(' AND ', $qbEq));
         }
 
         for ($i = 0; isset($this->params->getSort()[$i]); $i++) {
