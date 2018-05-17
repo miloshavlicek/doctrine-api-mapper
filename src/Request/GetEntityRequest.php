@@ -122,7 +122,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
         $paramCounter = 1;
         $qbEq = [];
         foreach ($this->filter as $filterKey => $filterValue) {
-            if(is_array($filterValue)) {
+            if (is_array($filterValue)) {
                 $qbEq[] = $qb->expr()->in('e.' . $filterKey, ':filter_' . $paramCounter);
             } else {
                 $qbEq[] = $qb->expr()->eq('e.' . $filterKey, ':filter_' . $paramCounter);
@@ -131,10 +131,12 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $paramCounter++;
         }
 
-        if ($this->filterOperator === 'OR') {
-            $qb->andWhere(implode(' OR ', $qbEq));
-        } else {
-            $qb->andWhere(implode(' AND ', $qbEq));
+        if (count($qbEq)) {
+            if ($this->filterOperator === 'OR') {
+                $qb->andWhere(implode(' OR ', $qbEq));
+            } else {
+                $qb->andWhere(implode(' AND ', $qbEq));
+            }
         }
 
         for ($i = 0; isset($this->params->getSort()[$i]); $i++) {
