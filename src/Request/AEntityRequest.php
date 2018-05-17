@@ -164,14 +164,6 @@ abstract class AEntityRequest
     }
 
     /**
-     * @return string
-     */
-    public function getEntity(): string
-    {
-        return $this->entity;
-    }
-
-    /**
      * @param IPropertiesListEntity $entity
      * @return mixed
      */

@@ -10,8 +10,7 @@ class DeleteEntityRequest extends AEntityRequest implements IEntityRequest
      */
     protected function solveIt(): void
     {
-        $item = $this->em->getRepository($this->entity)
-            ->find($this->paramFetcher->get($this->schema::ENTITY_REQUEST_ID_KEY));
+        $item = $this->repository->find($this->paramFetcher->get($this->schema::ENTITY_REQUEST_ID_KEY));
 
         $response = [];
         if ($item) {

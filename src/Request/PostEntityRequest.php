@@ -12,13 +12,7 @@ class PostEntityRequest extends AEntityRequest implements IEntityRequest
      */
     protected function solveIt(): void
     {
-        $repository = $this->em->getRepository($this->entity);
-
-        if ($repository instanceof IApiRepository) {
-            $item = $repository->create();
-        } else {
-            $item = new $this->entity;
-        }
+        $item = $this->repository->create();
 
         $item = $this->mapEntitySet($item);
 
