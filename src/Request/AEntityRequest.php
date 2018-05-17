@@ -164,10 +164,10 @@ abstract class AEntityRequest
     }
 
     /**
-     * @param IPropertiesListEntity $entity
+     * @param object $entity
      * @return mixed
      */
-    protected function mapEntitySet(IPropertiesListEntity $entity)
+    protected function mapEntitySet($entity)
     {
         $params = [];
         foreach ($this->paramFetcher->all() as $parameterKey => $parameter) {
@@ -179,14 +179,14 @@ abstract class AEntityRequest
                     function ($data) {
                         return $this->schema::ENTITY_PREFIX . $data;
                     },
-                    $entity::getEntityWriteProperties()
+                    $this->repository::getEntityWriteProperties()
                 )
             )) {
                 $params[ParamToEntityMethod::untranslate($parameterKey, $this->schema::ENTITY_PREFIX)] = $parameter;
             }
         };
 
-        return (new ParamToEntityMethod($entity, $entity::getEntityWriteProperties()))->resolveSet($params);
+        return (new ParamToEntityMethod($entity, $this->repository::getEntityWriteProperties()))->resolveSet($params);
     }
 
 }
