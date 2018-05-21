@@ -6,7 +6,7 @@ use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
-abstract class AApiRepository extends ServiceEntityRepository
+abstract class AApiRepository extends ServiceEntityRepository implements IApiRepository, IPropertiesListEntity
 {
     use TApiUserRepository;
     use TPropertiesListEntity;
