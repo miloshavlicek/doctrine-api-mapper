@@ -20,8 +20,7 @@ abstract class AEntityRequest
     /** @var array */
     protected $out = [
         'messages' => [],
-        'status' => true,
-        'user' => ['id' => null]
+        'status' => true
     ];
 
     /** @var UserInterface */
@@ -103,10 +102,24 @@ abstract class AEntityRequest
      */
     protected function getResponse(): array
     {
-        if ($this->user) {
-            $this->out['user']['id'] = $this->user->getId();
+        if ($this->params->isShowUser()) {
+            $this->processUser();
         }
         return $this->schema::mapOutput($this->out);
+    }
+
+    private function processUser()
+    {
+        if ($this->user) {
+            $this->out['user']['id'] = $this->user->getId();
+        } else {
+            $this->out['user'] = null;
+        }
+    }
+
+    public function getParams(): ?IParams
+    {
+        return $this->params;
     }
 
     /**
@@ -179,14 +192,14 @@ abstract class AEntityRequest
                     function ($data) {
                         return $this->schema::ENTITY_PREFIX . $data;
                     },
-                    $this->repository::getEntityWriteProperties()
+                    $this->repository->getEntityWriteProperties()
                 )
             )) {
                 $params[ParamToEntityMethod::untranslate($parameterKey, $this->schema::ENTITY_PREFIX)] = $parameter;
             }
         };
 
-        return (new ParamToEntityMethod($entity, $this->repository::getEntityWriteProperties()))->resolveSet($params);
+        return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties()))->resolveSet($params);
     }
 
 }

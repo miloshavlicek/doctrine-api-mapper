@@ -4,10 +4,10 @@ namespace Miloshavlicek\DoctrineApiMapper\Repository;
 
 interface IPropertiesListEntity
 {
-    public static function getEntityReadProperties();
+    public function getEntityReadProperties();
 
-    public static function getEntityWriteProperties();
+    public function getEntityWriteProperties();
 
-    public static function getEntityJoin(string $property): string;
+    public function getEntityJoin(string $property): IApiRepository;
 
 }

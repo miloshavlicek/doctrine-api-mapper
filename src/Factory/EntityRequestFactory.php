@@ -2,6 +2,9 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Factory;
 
+use Doctrine\ORM\EntityManagerInterface;
+use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Params\DeleteParams;
 use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
 use Miloshavlicek\DoctrineApiMapper\Params\OptionsParams;
@@ -16,8 +19,6 @@ use Miloshavlicek\DoctrineApiMapper\Request\OptionsEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\PatchEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\PostEntityRequest;
 use Miloshavlicek\DoctrineApiMapper\Request\PutEntityRequest;
-use Doctrine\ORM\EntityManagerInterface;
-use FOS\RestBundle\Request\ParamFetcherInterface;
 use Symfony\Component\Translation\TranslatorInterface;
 
 class EntityRequestFactory
@@ -50,7 +51,7 @@ class EntityRequestFactory
      * @return IEntityRequest
      * @throws \Exception
      */
-    public function create(string $method, IApiRepository $repository, array $filter = [], string $filterOperators = 'AND'): IEntityRequest
+    public function create(string $method, IApiRepository $repository, ?IEntityFilter $filter = null): IEntityRequest
     {
         if (!($repository instanceof IApiRepository)) {
             throw new \Exception('Repository have to be instanceof IApiRepository');
@@ -90,9 +91,9 @@ class EntityRequestFactory
 
         $solver->setRepository($repository);
 
-        if (count($filter) && $method === 'GET') {
-            $solver->setFilter($filter, $filterOperators);
-        } elseif (count($filter)) {
+        if ($filter && $method === 'GET') {
+            $solver->setFilter($filter);
+        } elseif ($filter) {
             throw new \Exception('Filter appliable only for GET queries.');
         }
 

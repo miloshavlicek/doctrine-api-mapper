@@ -23,6 +23,14 @@ class DefaultSchema
 
     const ENTITY_REQUEST_ID_KEY = 'id';
 
+    const I_COUNT_KEY = 'i_count';
+
+    const I_PERM_KEY = 'i_perm';
+
+    const I_RESULT_KEY = 'i_res';
+
+    const I_USER_KEY = 'i_user';
+
     /**
      * @param array $data
      * @return array

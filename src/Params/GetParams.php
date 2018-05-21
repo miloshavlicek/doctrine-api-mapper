@@ -28,6 +28,81 @@ class GetParams extends AParams implements IParams
     /** @var array */
     private $fields = ['id'];
 
+    /** @var bool */
+    private $showCountInResult = false;
+
+    /** @var bool */
+    private $showPermissions = false;
+
+    /** @var bool */
+    private $showUser = false;
+
+    /** @var bool */
+    private $showResult = true;
+
+    /**
+     * @return bool
+     */
+    public function isShowCountInResult(): bool
+    {
+        return $this->showCountInResult;
+    }
+
+    /**
+     * @param bool $showCountInResult
+     */
+    public function setShowCountInResult(bool $showCountInResult): void
+    {
+        $this->showCountInResult = $showCountInResult;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShowPermissions(): bool
+    {
+        return $this->showPermissions;
+    }
+
+    /**
+     * @param bool $showPermissions
+     */
+    public function setShowPermissions(bool $showPermissions): void
+    {
+        $this->showPermissions = $showPermissions;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShowUser(): bool
+    {
+        return $this->showUser;
+    }
+
+    /**
+     * @param bool $showUser
+     */
+    public function setShowUser(bool $showUser): void
+    {
+        $this->showUser = $showUser;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShowResult(): bool
+    {
+        return $this->showResult;
+    }
+
+    /**
+     * @param bool $showResult
+     */
+    public function setShowResult(bool $showResult): void
+    {
+        $this->showResult = $showResult;
+    }
 
     /**
      * @return array
@@ -90,6 +165,10 @@ class GetParams extends AParams implements IParams
         $paramFetcher->get($schema::SORT_KEY) && $this->sort = explode(',', $paramFetcher->get($schema::SORT_KEY));
         $paramFetcher->get($schema::ORDER_KEY) && $this->order = explode(',', $paramFetcher->get($schema::ORDER_KEY));
         $paramFetcher->get($schema::FIELDS_KEY) && $this->fields = explode(',', $paramFetcher->get($schema::FIELDS_KEY));
+        in_array($paramFetcher->get($schema::I_COUNT_KEY), ['0', '1']) && $this->showCountInResult = $paramFetcher->get($schema::I_COUNT_KEY) === "1";
+        in_array($paramFetcher->get($schema::I_PERM_KEY), ['0', '1']) && $this->showPermissions = $paramFetcher->get($schema::I_PERM_KEY) === "1";
+        in_array($paramFetcher->get($schema::I_RESULT_KEY), ['0', '1']) && $this->showResult = $paramFetcher->get($schema::I_RESULT_KEY) === "1";
+        in_array($paramFetcher->get($schema::I_USER_KEY), ['0', '1']) && $this->showUser = $paramFetcher->get($schema::I_USER_KEY) === "1";
 
         if ($this->page) {
             $this->offset = $this->limit * ($this->page - 1);
@@ -138,6 +217,32 @@ class GetParams extends AParams implements IParams
         $dynamicParam->name = $schema::ORDER_KEY; // ASC or DESC
         $dynamicParam->nullable = true;
         $paramFetcher->addParam($dynamicParam);
+
+        // Show rows count
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $schema::I_COUNT_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
+
+        // Show entity permissions info
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $schema::I_PERM_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
+
+
+        // Show result
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $schema::I_RESULT_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
+
+
+        // Show info about user
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $schema::I_USER_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
     }
 
     private function check(): void

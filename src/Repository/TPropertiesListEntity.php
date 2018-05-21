@@ -5,28 +5,36 @@ namespace Miloshavlicek\DoctrineApiMapper\Repository;
 trait TPropertiesListEntity
 {
 
-    public static function getEntityReadProperties()
+    public function getEntityReadProperties(): array
     {
-        return array_merge(
-            isset(self::$properties) ? self::$properties : [],
-            isset(self::$propertiesReadOnly) ? self::$propertiesReadOnly : []
-        );
+        return $this->acl->getEntityReadProperties($this->getUserRoles());
     }
 
-    public static function getEntityWriteProperties()
+    private function getUserRoles(): array
     {
-        return array_merge(
-            isset(self::$properties) ? self::$properties : [],
-            isset(self::$propertiesWriteOnly) ? self::$propertiesWriteOnly : []
-        );
+        return $this->user ? $this->user->getRoles() : [];
     }
 
-    public static function getEntityJoin(string $property): string
+    public function getEntityWriteProperties(): array
     {
-        if (property_exists(self, 'joins') && isset($joins[$property])) {
-            return $joins[$property];
+        return $this->acl->getEntityWriteProperties($this->getUserRoles());
+    }
+
+    public function getEntityJoin(string $property): IApiRepository
+    {
+        if ($this->hasEntityJoin($property) && $this->hasPermissionEntityJoin($property)) {
+            return $this->joins[$property];
         }
-        throw new \Exception('Join not found!');
+    }
+
+    public function hasEntityJoin(string $property): bool
+    {
+        return !empty($this->joins[$property]);
+    }
+
+    public function hasPermissionEntityJoin(string $property): bool
+    {
+        return $this->acl->checkEntityJoin($this->user->getRoles(), $property);
     }
 
 }

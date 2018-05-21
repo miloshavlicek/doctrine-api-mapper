@@ -78,7 +78,7 @@ abstract class AParams
      */
     protected function attachAllRepositoryReadPropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->repository::getEntityReadProperties(), $prefix);
+        $this->attachPropertiesToUrl($this->repository->getEntityReadProperties(), $prefix);
     }
 
     /**
@@ -109,7 +109,7 @@ abstract class AParams
      */
     protected function attachAllRepositoryWritePropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->repository::getEntityWriteProperties(), $prefix);
+        $this->attachPropertiesToUrl($this->repository->getEntityWriteProperties(), $prefix);
     }
 
 }

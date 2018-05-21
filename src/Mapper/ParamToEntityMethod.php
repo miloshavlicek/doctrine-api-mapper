@@ -47,11 +47,14 @@ class ParamToEntityMethod
     public function resolveGet(string $prefix = 'get')
     {
         $out = [];
-        foreach ($this->params as $param) {
-            $explodes = explode('.', $param);
-
+        foreach ($this->params as $param) { // e.g. [event.organizers.id, event.id, event.title]
             $entity = $this->entity;
-            foreach ($explodes as $explode) {
+            $outOne = null;
+            $outI = &$outOne;
+            foreach (explode('.', $param) as $explode) { // e.g. [event, organizers, id]
+                $outI[$explode] = null;
+                $outI = &$outI[$explode];
+
                 if ($entity === null) {
                     break;
                 }
@@ -59,7 +62,8 @@ class ParamToEntityMethod
                 $entity = $entity->$method();
             }
 
-            $out[$param] = $entity;
+            $outI = $entity;
+            $out = array_merge_recursive($out, $outOne);
         }
         return $out;
     }

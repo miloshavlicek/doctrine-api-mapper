@@ -2,8 +2,10 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
+use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
+use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -11,50 +13,27 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 class GetEntityRequest extends AEntityRequest implements IEntityRequest
 {
 
-    /** @var array */
-    private $filter = [];
-
-    /** @var string */
-    private $filterOperator = 'AND';
-
-    /** @var bool */
-    private $showCountInResult = true;
+    /** @var IEntityFilter|null */
+    private $filter;
 
     /** @var bool */
     private $singleResult = false;
 
     /**
-     * @return bool
+     * @return IEntityFilter|null
      */
-    public function isShowCountInResult(): bool
-    {
-        return $this->showCountInResult;
-    }
-
-    /**
-     * @param bool $showCountInResult
-     */
-    public function setShowCountInResult(bool $showCountInResult): void
-    {
-        $this->showCountInResult = $showCountInResult;
-    }
-
-    /**
-     * @return array
-     */
-    public function getFilter(): array
+    public function getFilter(): ?IEntityFilter
     {
         return $this->filter;
     }
 
     /**
-     * @param array $filter
+     * @param IEntityFilter|null $filter
      * @param string $filterOperators
      */
-    public function setFilter(array $filter, string $filterOperator = 'AND'): void
+    public function setFilter(?IEntityFilter $filter): void
     {
         $this->filter = $filter;
-        $this->filterOperator = $filterOperator;
     }
 
     /**
@@ -81,9 +60,13 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     {
         $qb = $this->prepareQueryBuilder();
 
-        if ($this->showCountInResult) {
+        if ($this->params->isShowCountInResult()) {
             // TODO: optimize
             $this->out['x-total-count'] = count($qb->getQuery()->getResult());
+        }
+
+        if ($this->params->isShowPermissions()) {
+            $this->processPermissions();
         }
 
         if (!$this->singleResult) {
@@ -91,21 +74,9 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $this->params->getOffset() && $qb->setFirstResult($this->params->getOffset());
         }
 
-        $q = $qb->getQuery();
-
-        try {
-            $items = $this->singleResult ? [$q->getSingleResult()] : $q->getResult();
-        } catch (NoResultException $e) {
-            $this->out['messages'][] = ['type' => 'warn', 'text' => 'No results found!'];
-            $items = [];
+        if ($this->params->isShowResult()) {
+            $this->processResult($qb);
         }
-
-        $res = [];
-        foreach ($items as $item) {
-            $res[] = $this->mapEntityGet($item, $this->params->getFields());
-        }
-
-        $this->out['result'] = $res;
     }
 
     /**
@@ -119,25 +90,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
         $this->mapCriteria($qb, $this->schema::FILTER_PREFIX);
 
-        $paramCounter = 1;
-        $qbEq = [];
-        foreach ($this->filter as $filterKey => $filterValue) {
-            if (is_array($filterValue)) {
-                $qbEq[] = $qb->expr()->in('e.' . $filterKey, ':filter_' . $paramCounter);
-            } else {
-                $qbEq[] = $qb->expr()->eq('e.' . $filterKey, ':filter_' . $paramCounter);
-            }
-            $qb->setParameter('filter_' . $paramCounter, $filterValue);
-            $paramCounter++;
-        }
-
-        if (count($qbEq)) {
-            if ($this->filterOperator === 'OR') {
-                $qb->andWhere(implode(' OR ', $qbEq));
-            } else {
-                $qb->andWhere(implode(' AND ', $qbEq));
-            }
-        }
+        $this->filter && $this->filter->appendQb($qb);
 
         for ($i = 0; isset($this->params->getSort()[$i]); $i++) {
             $qb->addOrderBy(
@@ -156,7 +109,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     private function mapCriteria(QueryBuilder $qb, string $filterPrefix)
     {
         $criteria = [];
-        foreach ($this->repository::getEntityReadProperties() as $property) {
+        foreach ($this->repository->getEntityReadProperties() as $property) {
             if ($this->paramFetcher->get($filterPrefix . $property) !== null) {
                 $criteria[ParamToEntityMethod::translate($property)] = $this->paramFetcher->get($filterPrefix . $property);
             }
@@ -167,6 +120,44 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $qb->setParameter('criteria_' . $paramCounter, $criteriaValue . '%');
             $paramCounter++;
         }
+    }
+
+    private function processPermissions()
+    {
+        /** @var AACL $acl */
+        $acl = $this->repository->getAcl();
+
+        $this->out['permissions'] = [
+            'default' => [
+                'read' => $acl->getEntityReadProperties($this->user->getRoles()),
+                'write' => $acl->getEntityWriteProperties($this->user->getRoles()),
+                'delete' => $acl->getEntityDeletePermission($this->user->getRoles()),
+                'joins' => $acl->getEntityJoinsPermissions($this->user->getRoles())
+            ]
+        ];
+    }
+
+    /**
+     * @param QueryBuilder $qb
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    private function processResult(QueryBuilder $qb)
+    {
+        $q = $qb->getQuery();
+
+        try {
+            $items = $this->singleResult ? [$q->getSingleResult()] : $q->getResult();
+        } catch (NoResultException $e) {
+            $this->out['messages'][] = ['type' => 'warn', 'text' => 'No results found!'];
+            $items = [];
+        }
+
+        $res = [];
+        foreach ($items as $item) {
+            $res[] = $this->mapEntityGet($item, $this->params->getFields());
+        }
+
+        $this->out['result'] = $res;
     }
 
     /**
@@ -189,18 +180,23 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $explodes = explode('.', $param);
 
             $level = 0;
+            /** @var IApiRepository $innerRepository */
             $innerRepository = $this->repository;
             foreach ($explodes as $explode) {
                 $level++;
-                if ($level < count($explodes)) {
-                    if (!in_array($explode . '.', $innerRepository::getEntityReadProperties())) {
-                        throw new BadRequestHttpException(sprintf('Property "%s" not supported.', $param));
+                if ($level < count($explodes)) { // is not property, but join
+                    if (!$innerRepository->hasEntityJoin($explode)) {
+                        var_dump($innerRepository->getEntityJoins());
+                        throw new BadRequestHttpException(sprintf('Join "%s" not supported (level: %d "%s").', $param, $level, $explode));
+                    }
+                    if (!$innerRepository->hasPermissionEntityJoin($explode)) {
+                        throw new BadRequestHttpException(sprintf('Insufficient permissions for join "%s" (level: %d "%s").', $param, $level, $explode));
                     }
 
-                    $innerRepository = $innerRepository::getEntityJoin($property);
-                } else {
-                    if (!in_array($explode, $innerRepository::getEntityReadProperties())) {
-                        throw new BadRequestHttpException(sprintf('Property "%s" not supported.', $param));
+                    $innerRepository = $innerRepository->getEntityJoin($explode);
+                } else { // is last part, so it is property
+                    if (!in_array($explode, $innerRepository->getEntityReadProperties())) {
+                        throw new BadRequestHttpException(sprintf('Property "%s" not supported or insufficient permissions.', $param));
                     }
                 }
             }
