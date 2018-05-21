@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
+use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
 use Miloshavlicek\DoctrineApiMapper\Params\IParams;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Miloshavlicek\DoctrineApiMapper\Schema\DefaultSchema;
@@ -102,7 +103,7 @@ abstract class AEntityRequest
      */
     protected function getResponse(): array
     {
-        if ($this->params->isShowUser()) {
+        if ($this->params && $this->params instanceof GetParams && $this->params->isShowUser()) {
             $this->processUser();
         }
         return $this->schema::mapOutput($this->out);
