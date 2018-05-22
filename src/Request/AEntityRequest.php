@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
+use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
 use Miloshavlicek\DoctrineApiMapper\Params\IParams;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Miloshavlicek\DoctrineApiMapper\Schema\DefaultSchema;
@@ -17,15 +18,13 @@ use Symfony\Component\Translation\TranslatorInterface;
 abstract class AEntityRequest
 {
 
+    /** @var UserInterface|null */
+    public $user;
     /** @var array */
     protected $out = [
         'messages' => [],
         'status' => true
     ];
-
-    /** @var UserInterface */
-    protected $user;
-
     /** @var bool */
     protected $userRequired = false;
 
@@ -59,15 +58,28 @@ abstract class AEntityRequest
      */
     public function __construct(
         ParamFetcherInterface $paramFetcher,
-        IParams $params,
+        string $params,
         EntityManagerInterface $em,
-        TranslatorInterface $translator
+        TranslatorInterface $translator,
+        $user
     )
     {
         $this->paramFetcher = $paramFetcher;
-        $this->params = $params;
+        $this->params = new $params($paramFetcher, $user);
         $this->em = $em;
         $this->translator = $translator;
+        $this->setUser($user);
+    }
+
+    /**
+     * @param UserInterface|null $user
+     */
+    private function setUser(?UserInterface $user): void
+    {
+        $this->user = $user;
+        if ($this->repository && method_exists($this->repository, 'setUser')) {
+            $this->repository->setUser($user);
+        }
     }
 
     /**
@@ -102,7 +114,7 @@ abstract class AEntityRequest
      */
     protected function getResponse(): array
     {
-        if ($this->params->isShowUser()) {
+        if ($this->params && $this->params instanceof GetParams && $this->params->isShowUser()) {
             $this->processUser();
         }
         return $this->schema::mapOutput($this->out);
@@ -128,17 +140,6 @@ abstract class AEntityRequest
     public function setUserRequired(bool $val = true): void
     {
         $this->userRequired = $val;
-    }
-
-    /**
-     * @param UserInterface|null $user
-     */
-    public function setUser(?UserInterface $user): void
-    {
-        $this->user = $user;
-        if ($this->repository && method_exists($this->repository, 'setUser')) {
-            $this->repository->setUser($user);
-        }
     }
 
     /**
@@ -174,6 +175,11 @@ abstract class AEntityRequest
         if ($this->user && method_exists($this->repository, 'setUser')) {
             $this->repository->setUser($this->user);
         }
+    }
+
+    protected function getUserRoles(): array
+    {
+        return $this->user ? $this->user->getRoles() : [];
     }
 
     /**

@@ -5,6 +5,6 @@ namespace Miloshavlicek\DoctrineApiMapper\EntityFilter;
 interface IEntityFilter
 {
 
-    public function getACL();
+    public function getAcl();
 
 }

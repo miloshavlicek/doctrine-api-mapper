@@ -51,7 +51,7 @@ class EntityRequestFactory
      * @return IEntityRequest
      * @throws \Exception
      */
-    public function create(string $method, IApiRepository $repository, ?IEntityFilter $filter = null): IEntityRequest
+    public function create(string $method, IApiRepository $repository, ?IEntityFilter $filter = null, $user = null): IEntityRequest
     {
         if (!($repository instanceof IApiRepository)) {
             throw new \Exception('Repository have to be instanceof IApiRepository');
@@ -87,8 +87,7 @@ class EntityRequestFactory
                 break;
         }
 
-        $solver = new $class($this->paramFetcher, new $params($this->paramFetcher), $this->em, $this->translator);
-
+        $solver = new $class($this->paramFetcher, $params, $this->em, $this->translator, $user);
         $solver->setRepository($repository);
 
         if ($filter && $method === 'GET') {

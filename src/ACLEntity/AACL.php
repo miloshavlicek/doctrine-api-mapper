@@ -24,10 +24,10 @@ abstract class AACL
 
     public function getEntityReadProperties(array $roles = []): array
     {
-        return $this->solveACL(['full', 'read'], $roles);
+        return $this->solveAcl(['full', 'read'], $roles);
     }
 
-    private function solveACL(array $acls, array $roles): array
+    private function solveAcl(array $acls, array $roles): array
     {
         $a0 = [];
         $roles[] = '*';
@@ -54,15 +54,15 @@ abstract class AACL
 
     public function getEntityWriteProperties(array $roles = []): array
     {
-        return $this->solveACL(['full', 'write'], $roles);
+        return $this->solveAcl(['full', 'write'], $roles);
     }
 
     public function getEntityDeletePermission(array $roles = []): bool
     {
-        return $this->solveACLDelete($roles);
+        return $this->solveAclDelete($roles);
     }
 
-    private function solveACLDelete(array $roles, bool $positiveFirst = false): bool
+    private function solveAclDelete(array $roles, bool $positiveFirst = false): bool
     {
         $roles[] = '*';
         foreach ($roles as $role) {
@@ -79,7 +79,7 @@ abstract class AACL
 
     public function getEntityJoinsPermissions(array $roles = []): array
     {
-        return $this->solveACL(['joins'], $roles);
+        return $this->solveAcl(['joins'], $roles);
     }
 
     public function checkEntityJoin(array $roles = [], string $property): bool
@@ -88,7 +88,7 @@ abstract class AACL
             throw new Exception(sprintf('Join "%s" not found!', $property));
         }
 
-        return in_array($property, $this->solveACL(['joins'], $roles));
+        return in_array($property, $this->solveAcl(['joins'], $roles));
     }
 
     protected function appendToACL(string $acl, string $role, $value)

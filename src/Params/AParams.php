@@ -5,6 +5,7 @@ namespace Miloshavlicek\DoctrineApiMapper\Params;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Controller\Annotations\RequestParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
 abstract class AParams
@@ -25,13 +26,15 @@ abstract class AParams
     /** @var string */
     protected $schema;
 
-    /**
-     * AParams constructor.
-     * @param ParamFetcherInterface $paramFetcher
-     */
-    public function __construct(ParamFetcherInterface $paramFetcher)
+    /** @var AACL */
+    private $acl;
+
+    private $user;
+
+    public function __construct(ParamFetcherInterface $paramFetcher, $user)
     {
         $this->paramFetcher = $paramFetcher;
+        $this->user = $user;
     }
 
     /**
@@ -71,6 +74,7 @@ abstract class AParams
     public function setRepository(IApiRepository $repository): void
     {
         $this->repository = $repository;
+        $this->setAcl($repository->getAcl());
     }
 
     /**
@@ -78,7 +82,31 @@ abstract class AParams
      */
     protected function attachAllRepositoryReadPropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->repository->getEntityReadProperties(), $prefix);
+        $read = $this->getAcl()->getEntityReadProperties($this->getUserRoles());
+        $joins = $this->getAcl()->getEntityJoinsPermissions($this->getUserRoles());
+
+        $this->attachPropertiesToUrl(array_merge($read, $joins), $prefix);
+    }
+
+    public function getAcl(): ?AACL
+    {
+        return $this->acl;
+    }
+
+    public function setAcl(?AACL $acl): void
+    {
+        if ($this->acl) {
+            /** hotfix TODO: solve */
+            return;
+            //throw new \Exception(1);
+        }
+
+        $this->acl = $acl;
+    }
+
+    protected function getUserRoles(): array
+    {
+        return $this->user ? $this->user->getRoles() : [];
     }
 
     /**
@@ -109,7 +137,7 @@ abstract class AParams
      */
     protected function attachAllRepositoryWritePropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->repository->getEntityWriteProperties(), $prefix);
+        $this->attachPropertiesToUrl($this->filter ? $this->filter->getAcl()->getEntityWriteProperties() : $this->repository->getEntityWriteProperties(), $prefix);
     }
 
 }

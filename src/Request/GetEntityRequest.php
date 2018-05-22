@@ -2,9 +2,9 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
-use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
+use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
@@ -29,11 +29,11 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
     /**
      * @param IEntityFilter|null $filter
-     * @param string $filterOperators
      */
     public function setFilter(?IEntityFilter $filter): void
     {
         $this->filter = $filter;
+        $this->params->setAcl($filter->getAcl());
     }
 
     /**
@@ -109,7 +109,8 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     private function mapCriteria(QueryBuilder $qb, string $filterPrefix)
     {
         $criteria = [];
-        foreach ($this->repository->getEntityReadProperties() as $property) {
+
+        foreach ($this->getAcl()->getEntityReadProperties() as $property) {
             if ($this->paramFetcher->get($filterPrefix . $property) !== null) {
                 $criteria[ParamToEntityMethod::translate($property)] = $this->paramFetcher->get($filterPrefix . $property);
             }
@@ -122,17 +123,25 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
         }
     }
 
+    private function getAcl(): ?AACL
+    {
+        if ($this->filter && $this->filter->getAcl()) {
+            return $this->filter->getAcl();
+        }
+
+        return $this->repository->getAcl();
+    }
+
     private function processPermissions()
     {
-        /** @var AACL $acl */
-        $acl = $this->repository->getAcl();
+        $acl = $this->getAcl();
 
         $this->out['permissions'] = [
             'default' => [
-                'read' => $acl->getEntityReadProperties($this->user->getRoles()),
-                'write' => $acl->getEntityWriteProperties($this->user->getRoles()),
-                'delete' => $acl->getEntityDeletePermission($this->user->getRoles()),
-                'joins' => $acl->getEntityJoinsPermissions($this->user->getRoles())
+                'read' => $acl->getEntityReadProperties($this->getUserRoles()),
+                'write' => $acl->getEntityWriteProperties($this->getUserRoles()),
+                'delete' => $acl->getEntityDeletePermission($this->getUserRoles()),
+                'joins' => $acl->getEntityJoinsPermissions($this->getUserRoles())
             ]
         ];
     }
@@ -182,20 +191,20 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $level = 0;
             /** @var IApiRepository $innerRepository */
             $innerRepository = $this->repository;
+
             foreach ($explodes as $explode) {
                 $level++;
                 if ($level < count($explodes)) { // is not property, but join
                     if (!$innerRepository->hasEntityJoin($explode)) {
-                        var_dump($innerRepository->getEntityJoins());
                         throw new BadRequestHttpException(sprintf('Join "%s" not supported (level: %d "%s").', $param, $level, $explode));
                     }
-                    if (!$innerRepository->hasPermissionEntityJoin($explode)) {
+                    if (!$innerRepository->hasPermissionEntityJoin($explode, $level === 1 ? $this->getAcl() : null)) {
                         throw new BadRequestHttpException(sprintf('Insufficient permissions for join "%s" (level: %d "%s").', $param, $level, $explode));
                     }
 
-                    $innerRepository = $innerRepository->getEntityJoin($explode);
+                    $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $this->getAcl() : null);
                 } else { // is last part, so it is property
-                    if (!in_array($explode, $innerRepository->getEntityReadProperties())) {
+                    if (!in_array($explode, $innerRepository->getEntityReadProperties($level === 1 ? $this->getAcl() : null))) {
                         throw new BadRequestHttpException(sprintf('Property "%s" not supported or insufficient permissions.', $param));
                     }
                 }

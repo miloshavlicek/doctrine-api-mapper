@@ -8,7 +8,7 @@ use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 interface IParams
 {
 
-    public function __construct(ParamFetcherInterface $paramFetcher);
+    public function __construct(ParamFetcherInterface $paramFetcher, $user);
 
     public function init(string $schema): void;
 
