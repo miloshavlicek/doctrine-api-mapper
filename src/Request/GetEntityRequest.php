@@ -110,12 +110,13 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     {
         $criteria = [];
 
-        foreach ($this->getAcl()->getEntityReadProperties() as $property) {
+        foreach ($this->getAcl()->getEntityReadProperties($this->getUserRoles()) as $property) {
             if ($this->paramFetcher->get($filterPrefix . $property) !== null) {
                 $criteria[ParamToEntityMethod::translate($property)] = $this->paramFetcher->get($filterPrefix . $property);
             }
         }
         $paramCounter = 1;
+
         foreach ($criteria as $criteriaKey => $criteriaValue) {
             $qb->andWhere($qb->expr()->like('e.' . $criteriaKey, ':criteria_' . $paramCounter));
             $qb->setParameter('criteria_' . $paramCounter, $criteriaValue . '%');

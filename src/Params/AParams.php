@@ -137,7 +137,10 @@ abstract class AParams
      */
     protected function attachAllRepositoryWritePropertiesToUrl(string $prefix = ''): void
     {
-        $this->attachPropertiesToUrl($this->filter ? $this->filter->getAcl()->getEntityWriteProperties() : $this->repository->getEntityWriteProperties(), $prefix);
+        $read = $this->getAcl()->getEntityReadProperties($this->getUserRoles());
+        $joins = $this->getAcl()->getEntityJoinsPermissions($this->getUserRoles());
+
+        $this->attachPropertiesToUrl(array_merge($read, $joins), $prefix);
     }
 
 }
