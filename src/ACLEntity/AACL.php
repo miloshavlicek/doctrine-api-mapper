@@ -91,20 +91,32 @@ abstract class AACL
         return in_array($property, $this->solveAcl(['joins'], $roles));
     }
 
-    protected function appendToACL(string $acl, string $role, $value)
+    /**
+     * @param string $acl
+     * @param string|array $roles
+     * @param $value
+     * @throws Exception
+     */
+    protected function appendToACL(string $acl, $roles, $value)
     {
-        if (!isset($this->acls[$acl])) {
-            throw new Exception(sprintf('ACL %s not available for append.', $acl));
+        if (!is_array($roles)) {
+            $roles = [$roles];
         }
 
-        if (!isset($this->acls[$acl][$role])) {
-            $this->acls[$acl][$role] = [];
-        }
+        foreach ($roles as $role) {
+            if (!isset($this->acls[$acl])) {
+                throw new Exception(sprintf('ACL %s not available for append.', $acl));
+            }
 
-        if ($acl === 'delete') {
-            $this->acls[$acl][$role] = $value;
-        } else {
-            $this->acls[$acl][$role] = array_merge($this->acls[$acl][$role], $value);
+            if (!isset($this->acls[$acl][$role])) {
+                $this->acls[$acl][$role] = [];
+            }
+
+            if ($acl === 'delete') {
+                $this->acls[$acl][$role] = $value;
+            } else {
+                $this->acls[$acl][$role] = array_merge($this->acls[$acl][$role], $value);
+            }
         }
     }
 

@@ -116,7 +116,6 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             }
         }
         $paramCounter = 1;
-
         foreach ($criteria as $criteriaKey => $criteriaValue) {
             $qb->andWhere($qb->expr()->like('e.' . $criteriaKey, ':criteria_' . $paramCounter));
             $qb->setParameter('criteria_' . $paramCounter, $criteriaValue . '%');
