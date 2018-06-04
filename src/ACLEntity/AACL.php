@@ -104,19 +104,30 @@ abstract class AACL
         }
 
         foreach ($roles as $role) {
-            if (!isset($this->acls[$acl])) {
-                throw new Exception(sprintf('ACL %s not available for append.', $acl));
-            }
+            $this->appendToACLOne($acl, $role, $value);
+        }
+    }
 
-            if (!isset($this->acls[$acl][$role])) {
-                $this->acls[$acl][$role] = [];
-            }
+    /**
+     * @param string $acl
+     * @param string $role
+     * @param $value
+     * @throws Exception
+     */
+    protected function appendToACLOne(string $acl, string $role, $value)
+    {
+        if (!isset($this->acls[$acl])) {
+            throw new Exception(sprintf('ACL %s not available for append.', $acl));
+        }
 
-            if ($acl === 'delete') {
-                $this->acls[$acl][$role] = $value;
-            } else {
-                $this->acls[$acl][$role] = array_merge($this->acls[$acl][$role], $value);
-            }
+        if (!isset($this->acls[$acl][$role])) {
+            $this->acls[$acl][$role] = [];
+        }
+
+        if ($acl === 'delete') {
+            $this->acls[$acl][$role] = $value;
+        } else {
+            $this->acls[$acl][$role] = array_merge($this->acls[$acl][$role], $value);
         }
     }
 
