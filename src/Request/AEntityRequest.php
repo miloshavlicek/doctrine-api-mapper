@@ -7,7 +7,7 @@ use Doctrine\ORM\ORMException;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
-use Miloshavlicek\DoctrineApiMapper\ACLValidator;
+use Miloshavlicek\DoctrineApiMapper\Service\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;

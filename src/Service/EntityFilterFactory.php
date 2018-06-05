@@ -1,6 +1,6 @@
 <?php
 
-namespace Miloshavlicek\DoctrineApiMapper\Factory;
+namespace Miloshavlicek\DoctrineApiMapper\Service;
 
 use Miloshavlicek\DoctrineApiMapper\Mapper\MapperFactory;
 use Miloshavlicek\DoctrineApiMapper\Solver;

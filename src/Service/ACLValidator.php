@@ -1,21 +1,21 @@
 <?php
 
-namespace Miloshavlicek\DoctrineApiMapper;
+namespace Miloshavlicek\DoctrineApiMapper\Service;
 
 use App\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
-use Symfony\Component\Translation\Translator;
+use Symfony\Component\Translation\TranslatorInterface;
 
 class ACLValidator
 {
 
-    /** @var Translator */
+    /** @var TranslatorInterface */
     private $translator;
 
     public function __construct(
-        Translator $translator
+        TranslatorInterface $translator
     )
     {
         $this->translator = $translator;

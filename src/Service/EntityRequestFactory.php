@@ -1,10 +1,10 @@
 <?php
 
-namespace Miloshavlicek\DoctrineApiMapper\Factory;
+namespace Miloshavlicek\DoctrineApiMapper\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
-use Miloshavlicek\DoctrineApiMapper\ACLValidator;
+use Miloshavlicek\DoctrineApiMapper\Service\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Params\DeleteParams;
