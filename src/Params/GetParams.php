@@ -251,11 +251,11 @@ class GetParams extends AParams implements IParams
         $paramFetcher = $this->paramFetcher;
 
         if ($paramFetcher->get($schema::OFFSET_KEY) && $paramFetcher->get($schema::PAGE_KEY)) {
-            throw new BadRequestHttpException($this->translator->trans('exception.badRequest_offsetOrPage'), [], 'doctrine-api-mapper'));
+            throw new BadRequestHttpException($this->translator->trans('exception.badRequest_offsetOrPage'), [], 'doctrine-api-mapper');
         }
 
         if ($paramFetcher->get($schema::PAGE_KEY) && !$paramFetcher->get($schema::LIMIT_KEY)) {
-            throw new BadRequestHttpException($this->translator->trans('exception.badRequest_limitReqIfPage'), [], 'doctrine-api-mapper'));
+            throw new BadRequestHttpException($this->translator->trans('exception.badRequest_limitReqIfPage'), [], 'doctrine-api-mapper');
         }
     }
 

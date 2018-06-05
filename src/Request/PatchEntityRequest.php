@@ -20,7 +20,7 @@ class PatchEntityRequest extends AEntityRequest implements IEntityRequest
             $this->out['status'] = true;
         } else {
             $this->out['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.itemNotFound', ['%id%' => $this->paramFetcher->get('id')], 'doctrine-api-mapper'))];
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.itemNotFound', ['%id%' => $this->paramFetcher->get('id')], 'doctrine-api-mapper')];
         }
     }
 
