@@ -5,10 +5,10 @@ namespace Miloshavlicek\DoctrineApiMapper\Request;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
 use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
+use Miloshavlicek\DoctrineApiMapper\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class GetEntityRequest extends AEntityRequest implements IEntityRequest
 {
@@ -176,40 +176,9 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
      */
     private function mapEntityGet($entity, array $params)
     {
-        $params && $this->checkMapEntityParamsValidity($params);
+        (new ACLValidator($this->repository))->validateRead($params, $this->getAcl(), $this->user);
         return (new ParamToEntityMethod($entity, $params))->resolveGet();
     }
 
-    /**
-     * @param array $params
-     */
-    private function checkMapEntityParamsValidity(array $params)
-    {
-        foreach ($params as $param) {
-            $explodes = explode('.', $param);
-
-            $level = 0;
-            /** @var IApiRepository $innerRepository */
-            $innerRepository = $this->repository;
-
-            foreach ($explodes as $explode) {
-                $level++;
-                if ($level < count($explodes)) { // is not property, but join
-                    if (!$innerRepository->hasEntityJoin($explode)) {
-                        throw new BadRequestHttpException(sprintf('Join "%s" not supported (level: %d "%s").', $param, $level, $explode));
-                    }
-                    if (!$innerRepository->hasPermissionEntityJoin($explode, $level === 1 ? $this->getAcl() : null)) {
-                        throw new BadRequestHttpException(sprintf('Insufficient permissions for join "%s" (level: %d "%s").', $param, $level, $explode));
-                    }
-
-                    $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $this->getAcl() : null);
-                } else { // is last part, so it is property
-                    if (!in_array($explode, $innerRepository->getEntityReadProperties($level === 1 ? $this->getAcl() : null))) {
-                        throw new BadRequestHttpException(sprintf('Property "%s" not supported or insufficient permissions.', $param));
-                    }
-                }
-            }
-        }
-    }
 
 }

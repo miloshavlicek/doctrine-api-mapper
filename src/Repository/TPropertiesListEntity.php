@@ -12,6 +12,7 @@ trait TPropertiesListEntity
         if (!$acl) {
             $acl = $this->acl;
         }
+
         return $acl->getEntityReadProperties($this->getUserRoles());
     }
 

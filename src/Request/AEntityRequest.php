@@ -4,6 +4,7 @@ namespace Miloshavlicek\DoctrineApiMapper\Request;
 
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
@@ -188,24 +189,26 @@ abstract class AEntityRequest
      */
     protected function mapEntitySet($entity)
     {
-        $params = [];
-        foreach ($this->paramFetcher->all() as $parameterKey => $parameter) {
-            if ($parameterKey === 'id') {
-                continue;
-            }
-            if (in_array($parameterKey,
-                array_map(
-                    function ($data) {
-                        return $this->schema::ENTITY_PREFIX . $data;
-                    },
-                    $this->repository->getEntityWriteProperties()
-                )
-            )) {
-                $params[ParamToEntityMethod::untranslate($parameterKey, $this->schema::ENTITY_PREFIX)] = $parameter;
-            }
-        };
-
+        $params = $this->filterEntityNamesByPrefix();
+        (new ACLValidator($this->repository))->validateWrite($params, $this->getAcl(), $this->user);
         return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties()))->resolveSet($params);
+    }
+
+    /**
+     * @param array $entities
+     * @return array
+     */
+    private function filterEntityNamesByPrefix(array $entities): array
+    {
+        $out = [];
+
+        foreach ($this->paramFetcher->all() as $entityKey => $entity) {
+            if (substr($entity, 0, strlen($this->schema::ENTITY_PREFIX) - 1) === $this->schema::ENTITY_PREFIX) {
+                $out[] = substr($entity, strlen($this->schema::ENTITY_PREFIX));
+            }
+        }
+
+        return $out;
     }
 
 }

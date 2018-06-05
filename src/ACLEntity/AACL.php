@@ -62,19 +62,15 @@ abstract class AACL
         return $this->solveAclDelete($roles);
     }
 
-    private function solveAclDelete(array $roles, bool $positiveFirst = false): bool
+    private function solveAclDelete(array $roles): bool
     {
         $roles[] = '*';
         foreach ($roles as $role) {
-            if (isset($this->acls['delete'][$role])) {
-                if ($this->acls['delete'][$role] === $positiveFirst) {
-                    return $positiveFirst;
-                } elseif ($this->acls['delete'][$role] === !$positiveFirst) {
-                    return !$positiveFirst;
-                }
+            if (isset($this->acls['delete'][$role]) && $this->acls['delete'][$role] === true) {
+                return true;
             }
         }
-        return $positiveFirst;
+        return false;
     }
 
     public function getEntityJoinsPermissions(array $roles = []): array
@@ -92,19 +88,30 @@ abstract class AACL
     }
 
     /**
+     * @param string|array $roles
+     * @throws Exception
+     */
+    protected function appendFullPermissions($roles)
+    {
+        $this->append('full', $roles, ['*']);
+        $this->append('delete', $roles, true);
+        $this->append('joins', $roles, ['*']);
+    }
+
+    /**
      * @param string $acl
      * @param string|array $roles
      * @param $value
      * @throws Exception
      */
-    protected function appendToACL(string $acl, $roles, $value)
+    protected function append(string $acl, $roles, $value)
     {
         if (!is_array($roles)) {
             $roles = [$roles];
         }
 
         foreach ($roles as $role) {
-            $this->appendToACLOne($acl, $role, $value);
+            $this->appendOne($acl, $role, $value);
         }
     }
 
@@ -114,7 +121,7 @@ abstract class AACL
      * @param $value
      * @throws Exception
      */
-    protected function appendToACLOne(string $acl, string $role, $value)
+    protected function appendOne(string $acl, string $role, $value)
     {
         if (!isset($this->acls[$acl])) {
             throw new Exception(sprintf('ACL %s not available for append.', $acl));

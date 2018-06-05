@@ -2,6 +2,8 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
+use Miloshavlicek\DoctrineApiMapper\ACLValidator;
+
 class DeleteEntityRequest extends AEntityRequest implements IEntityRequest
 {
 
@@ -10,6 +12,8 @@ class DeleteEntityRequest extends AEntityRequest implements IEntityRequest
      */
     protected function solveIt(): void
     {
+        (new ACLValidator($this->repository))->validateDelete(null, $this->user);
+
         $item = $this->repository->find($this->paramFetcher->get($this->schema::ENTITY_REQUEST_ID_KEY));
 
         $response = [];
