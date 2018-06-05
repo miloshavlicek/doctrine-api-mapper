@@ -6,8 +6,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMException;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
+use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
 use Miloshavlicek\DoctrineApiMapper\Exception\BadRequestException;
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
@@ -26,11 +28,13 @@ abstract class AEntityRequest
 
     /** @var UserInterface|null */
     public $user;
+
     /** @var array */
     protected $out = [
         'messages' => [],
         'status' => true
     ];
+
     /** @var bool */
     protected $userRequired = false;
 
@@ -51,6 +55,9 @@ abstract class AEntityRequest
 
     /** @var IApiRepository */
     protected $repository;
+
+    /** @var IEntityFilter|null */
+    protected $filter;
 
     /** @var TranslatorInterface */
     protected $translator;
@@ -78,18 +85,6 @@ abstract class AEntityRequest
         $this->setUser($user);
     }
 
-    private function solveLang()
-    {
-        $dynamicParam = new QueryParam();
-        $dynamicParam->name = $this->schema::LANG_KEY;
-        $dynamicParam->nullable = true;
-        $this->paramFetcher->addParam($dynamicParam);
-
-        $lang = $this->paramFetcher->get($this->schema::LANG_KEY);
-
-        $this->translator->setLocale($lang ?: 'en');
-    }
-
     /**
      * @param UserInterface|null $user
      */
@@ -99,6 +94,23 @@ abstract class AEntityRequest
         if ($this->repository && method_exists($this->repository, 'setUser')) {
             $this->repository->setUser($user);
         }
+    }
+
+    /**
+     * @return IEntityFilter|null
+     */
+    public function getFilter(): ?IEntityFilter
+    {
+        return $this->filter;
+    }
+
+    /**
+     * @param IEntityFilter|null $filter
+     */
+    public function setFilter(?IEntityFilter $filter): void
+    {
+        $this->filter = $filter;
+        $this->params->setAcl($filter->getAcl());
     }
 
     /**
@@ -142,6 +154,18 @@ abstract class AEntityRequest
         }
 
         return $this->getResponse();
+    }
+
+    private function solveLang()
+    {
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $this->schema::LANG_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
+
+        $lang = $this->paramFetcher->get($this->schema::LANG_KEY);
+
+        $this->translator->setLocale($lang ?: 'en');
     }
 
     protected function checkUserRequirement(): void
@@ -244,7 +268,7 @@ abstract class AEntityRequest
      * @param array $entities
      * @return array
      */
-    private function filterEntityNamesByPrefix(array $entities): array
+    private function filterEntityNamesByPrefix(): array
     {
         $out = [];
 
@@ -255,6 +279,15 @@ abstract class AEntityRequest
         }
 
         return $out;
+    }
+
+    protected function getAcl(): ?AACL
+    {
+        if ($this->filter && $this->filter->getAcl()) {
+            return $this->filter->getAcl();
+        }
+
+        return $this->repository->getAcl();
     }
 
 }

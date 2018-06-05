@@ -6,35 +6,14 @@ use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
 use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\ACLValidator;
-use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
 class GetEntityRequest extends AEntityRequest implements IEntityRequest
 {
 
-    /** @var IEntityFilter|null */
-    private $filter;
-
     /** @var bool */
     private $singleResult = false;
-
-    /**
-     * @return IEntityFilter|null
-     */
-    public function getFilter(): ?IEntityFilter
-    {
-        return $this->filter;
-    }
-
-    /**
-     * @param IEntityFilter|null $filter
-     */
-    public function setFilter(?IEntityFilter $filter): void
-    {
-        $this->filter = $filter;
-        $this->params->setAcl($filter->getAcl());
-    }
 
     /**
      * @return bool
@@ -121,15 +100,6 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $qb->setParameter('criteria_' . $paramCounter, $criteriaValue . '%');
             $paramCounter++;
         }
-    }
-
-    private function getAcl(): ?AACL
-    {
-        if ($this->filter && $this->filter->getAcl()) {
-            return $this->filter->getAcl();
-        }
-
-        return $this->repository->getAcl();
     }
 
     private function processPermissions()
