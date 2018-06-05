@@ -6,27 +6,30 @@ use App\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
+use Symfony\Component\Translation\Translator;
 
 class ACLValidator
 {
 
-    /** @var IApiRepository */
-    private $baseRepository;
+    /** @var Translator */
+    private $translator;
 
-    public function __construct(IApiRepository $baseRepository)
+    public function __construct(
+        Translator $translator
+    )
     {
-        $this->baseRepository = $baseRepository;
+        $this->translator = $translator;
     }
 
-    public function validateRead(array $params, ?AACL $acl = null, $user = null)
+    public function validateRead(IApiRepository $baseRepository, array $params, ?AACL $acl = null, $user = null)
     {
-        $this->validate('read', $params, $acl, $user);
+        $this->validate($baseRepository, 'read', $params, $acl, $user);
     }
 
-    private function validate(string $access, array $params, ?AACL $acl = null, $user = null)
+    private function validate(IApiRepository $baseRepository, string $access, array $params, ?AACL $acl = null, $user = null)
     {
         if ($acl === null) {
-            $acl = $this->baseRepository->getAcl();
+            $acl = $baseRepository->getAcl();
         }
 
         foreach ($params as $param) {
@@ -35,7 +38,7 @@ class ACLValidator
             $level = 0;
 
             /** @var IApiRepository $innerRepository */
-            $innerRepository = $this->baseRepository;
+            $innerRepository = $baseRepository;
 
             foreach ($explodes as $explode) {
                 $level++;
@@ -68,15 +71,15 @@ class ACLValidator
         }
     }
 
-    public function validateWrite(array $params, ?AACL $acl = null, $user = null)
+    public function validateWrite(IApiRepository $baseRepository, array $params, ?AACL $acl = null, $user = null)
     {
         $this->validate('write', $params, $acl, $user);
     }
 
-    public function validateDelete(?AACL $acl = null, $user = null)
+    public function validateDelete(IApiRepository $baseRepository, ?AACL $acl = null, $user = null)
     {
         if ($acl === null) {
-            $acl = $this->baseRepository->getAcl();
+            $acl = $baseRepository->getAcl();
         }
 
         if (!$acl->getEntityDeletePermission($user ? $user->getRoles() : [])) {

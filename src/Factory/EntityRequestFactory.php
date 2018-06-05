@@ -4,6 +4,7 @@ namespace Miloshavlicek\DoctrineApiMapper\Factory;
 
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
+use Miloshavlicek\DoctrineApiMapper\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Params\DeleteParams;
@@ -34,15 +35,20 @@ class EntityRequestFactory
     /** @var TranslatorInterface */
     private $translator;
 
+    /** @var ACLValidator */
+    private $aclValidator;
+
     public function __construct(
         ParamFetcherInterface $paramFetcher,
         EntityManagerInterface $em,
-        TranslatorInterface $translator
+        TranslatorInterface $translator,
+        ACLValidator $aclValidator
     )
     {
         $this->paramFetcher = $paramFetcher;
         $this->em = $em;
         $this->translator = $translator;
+        $this->aclValidator = $aclValidator;
     }
 
     /**
@@ -88,7 +94,7 @@ class EntityRequestFactory
                 break;
         }
 
-        $solver = new $class($this->paramFetcher, $params, $this->em, $this->translator, $user);
+        $solver = new $class($this->paramFetcher, $params, $this->em, $this->translator, $this->aclValidator, $user);
         $solver->setRepository($repository);
 
         if ($filter && $method === 'GET') {

@@ -4,8 +4,6 @@ namespace Miloshavlicek\DoctrineApiMapper\Request;
 
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
-use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
-use Miloshavlicek\DoctrineApiMapper\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
@@ -146,7 +144,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
      */
     private function mapEntityGet($entity, array $params)
     {
-        (new ACLValidator($this->repository))->validateRead($params, $this->getAcl(), $this->user);
+        $this->aclValidator->validateRead($this->repository, $params, $this->getAcl(), $this->user);
         return (new ParamToEntityMethod($entity, $params))->resolveGet();
     }
 

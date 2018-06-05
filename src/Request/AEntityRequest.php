@@ -62,18 +62,24 @@ abstract class AEntityRequest
     /** @var TranslatorInterface */
     protected $translator;
 
+    /** @var ACLValidator */
+    protected $aclValidator;
+
     /**
-     * GetEntityRequest constructor.
+     * AEntityRequest constructor.
      * @param ParamFetcherInterface $paramFetcher
-     * @param IParams $params
+     * @param string $params
      * @param EntityManagerInterface $em
      * @param TranslatorInterface $translator
+     * @param ACLValidator $aclValidator
+     * @param $user
      */
     public function __construct(
         ParamFetcherInterface $paramFetcher,
         string $params,
         EntityManagerInterface $em,
         TranslatorInterface $translator,
+        ACLValidator $aclValidator,
         $user
     )
     {
@@ -81,6 +87,7 @@ abstract class AEntityRequest
         $this->params = new $params($paramFetcher, $user);
         $this->em = $em;
         $this->translator = $translator;
+        $this->aclValidator = $aclValidator;
 
         $this->setUser($user);
     }
@@ -151,6 +158,7 @@ abstract class AEntityRequest
         } catch (\Exception $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.unknown', [], 'doctrine-api-mapper')];
+            var_dump($e->getMessage());
         }
 
         return $this->getResponse();
@@ -260,7 +268,7 @@ abstract class AEntityRequest
     protected function mapEntitySet($entity)
     {
         $params = $this->filterEntityNamesByPrefix();
-        (new ACLValidator($this->repository))->validateWrite($params, $this->getAcl(), $this->user);
+        $this->aclValidator->validateWrite($this->repository, $params, $this->getAcl(), $this->user);
         return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties()))->resolveSet($params);
     }
 
