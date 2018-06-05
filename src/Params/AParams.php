@@ -48,11 +48,6 @@ abstract class AParams
 
         $this->schema = $schema;
 
-        $dynamicParam = new RequestParam();
-        $dynamicParam->name = 'token';
-        $dynamicParam->nullable = true;
-        $this->paramFetcher->addParam($dynamicParam);
-
         $this->initIt();
 
         $this->initialized = true;
@@ -98,7 +93,6 @@ abstract class AParams
         if ($this->acl) {
             /** hotfix TODO: solve */
             return;
-            //throw new \Exception(1);
         }
 
         $this->acl = $acl;

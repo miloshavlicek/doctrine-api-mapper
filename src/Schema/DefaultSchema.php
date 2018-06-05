@@ -17,6 +17,8 @@ class DefaultSchema
 
     const FIELDS_KEY = '_fields';
 
+    const LANG_KEY = '_lang';
+
     const FILTER_PREFIX = 'f_';
 
     const ENTITY_PREFIX = 'e_';

@@ -18,16 +18,11 @@ class DeleteEntityRequest extends AEntityRequest implements IEntityRequest
 
         $response = [];
         if ($item) {
-            try {
-                $this->em->remove($item);
-                $this->em->flush($item);
-            } catch (\Exception $e) {
-                $response['status'] = false;
-                $this->out['messages'][] = ['type' => 'err', 'Database exception'];
-            }
+            $this->em->remove($item);
+            $this->em->flush($item);
         } else {
             $this->out['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', sprintf('Item by ID "%d" not found!', $this->paramFetcher->get('id'))];
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.itemNotFound', ['%id%' => $this->paramFetcher->get('id')], 'doctrine-api-mapper')];
         }
     }
 

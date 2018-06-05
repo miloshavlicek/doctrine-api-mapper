@@ -3,6 +3,8 @@
 namespace Miloshavlicek\DoctrineApiMapper;
 
 use App\ACLEntity\AACL;
+use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
 class ACLValidator
@@ -39,10 +41,10 @@ class ACLValidator
                 $level++;
                 if ($level < count($explodes)) { // is not property, but join
                     if (!$innerRepository->hasEntityJoin($explode)) {
-                        throw new BadRequestHttpException(sprintf('Join "%s" not supported (level: %d "%s").', $param, $level, $explode));
+                        throw new AccessDeniedException($this->translator->trans('exception.joinNotSupported', ['%param%' => $param, '%level%' => $level, '%explode%' => $explode], 'doctrine-api-mapper'));
                     }
                     if (!$innerRepository->hasPermissionEntityJoin($explode, $level === 1 ? $acl : $innerRepository->getAcl())) {
-                        throw new BadRequestHttpException(sprintf('Insufficient permissions for join "%s" (level: %d "%s").', $param, $level, $explode));
+                        throw new AccessDeniedException($this->translator->trans('exception.insufPermJoin', ['%param%' => $param, '%level%' => $level, '%explode%' => $explode], 'doctrine-api-mapper'));
                     }
 
                     $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $acl : $innerRepository->getAcl());
@@ -51,15 +53,15 @@ class ACLValidator
                     if ($access === 'read') {
                         if ($explode !== 'id' && !in_array($explode, $innerRepository->getEntityReadProperties($level === 1 ? $acl : $innerRepository->getAcl()))) {
                             // everyone has access to id if has access to join
-                            throw new BadRequestHttpException(sprintf('Property "%s" not supported or insufficient read permissions.', $param));
+                            throw new AccessDeniedException($this->translator->trans('exception.propertyNotReadable', ['%param%' => $param], 'doctrine-api-mapper'));
                         }
                     } elseif ($access === 'write') {
                         if (!in_array($explode, $innerRepository->getEntityWriteProperties($level === 1 ? $acl : $innerRepository->getAcl()))) {
                             // everyone has access to id if has access to join
-                            throw new BadRequestHttpException(sprintf('Property "%s" not supported or insufficient write permissions.', $param));
+                            throw new AccessDeniedException($this->translator->trans('exception.propertyNotWritable', ['%param%' => $param], 'doctrine-api-mapper'));
                         }
                     } else {
-                        throw new \Exception(sprintf('Unknown access type "%s"', $access));
+                        throw new InternalException(sprintf('Unknown access type "%s"', $access));
                     }
                 }
             }
@@ -78,7 +80,7 @@ class ACLValidator
         }
 
         if (!$acl->getEntityDeletePermission($user ? $user->getRoles() : [])) {
-            throw new \Exception('Insufficient permissions!');
+            throw new AccessDeniedException($this->translator->trans('exception.insufficientPermissions', ['%param%' => $param], 'doctrine-api-mapper'));
         }
     }
 

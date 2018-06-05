@@ -2,7 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\ACLEntity;
 
-use Exception;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 
 abstract class AACL
 {
@@ -35,7 +35,7 @@ abstract class AACL
             $a1 = [];
             foreach ($acls as $acl) {
                 if (!isset($this->acls[$acl])) {
-                    throw new Exception(sprintf('ACL %s not available.', $acl));
+                    throw new InternalException(sprintf('ACL %s not available.', $acl));
                 }
 
                 if (isset($this->acls[$acl][$role])) {
@@ -81,7 +81,7 @@ abstract class AACL
     public function checkEntityJoin(array $roles = [], string $property): bool
     {
         if (!in_array($property, $this->joins)) {
-            throw new Exception(sprintf('Join "%s" not found!', $property));
+            throw new InternalException(sprintf('Join "%s" not found!', $property));
         }
 
         return in_array($property, $this->solveAcl(['joins'], $roles));
@@ -89,7 +89,6 @@ abstract class AACL
 
     /**
      * @param string|array $roles
-     * @throws Exception
      */
     protected function appendFullPermissions($roles)
     {
@@ -102,7 +101,6 @@ abstract class AACL
      * @param string $acl
      * @param string|array $roles
      * @param $value
-     * @throws Exception
      */
     protected function append(string $acl, $roles, $value)
     {
@@ -119,12 +117,12 @@ abstract class AACL
      * @param string $acl
      * @param string $role
      * @param $value
-     * @throws Exception
+     * @throws InternalException
      */
     protected function appendOne(string $acl, string $role, $value)
     {
         if (!isset($this->acls[$acl])) {
-            throw new Exception(sprintf('ACL %s not available for append.', $acl));
+            throw new InternalException(sprintf('ACL %s not available for append.', $acl));
         }
 
         if (!isset($this->acls[$acl][$role])) {

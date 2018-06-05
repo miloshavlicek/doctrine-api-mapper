@@ -3,9 +3,14 @@
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\ORMException;
+use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
+use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
+use Miloshavlicek\DoctrineApiMapper\Exception\BadRequestException;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
 use Miloshavlicek\DoctrineApiMapper\Params\IParams;
@@ -48,7 +53,7 @@ abstract class AEntityRequest
     protected $repository;
 
     /** @var TranslatorInterface */
-    private $translator;
+    protected $translator;
 
     /**
      * GetEntityRequest constructor.
@@ -69,7 +74,20 @@ abstract class AEntityRequest
         $this->params = new $params($paramFetcher, $user);
         $this->em = $em;
         $this->translator = $translator;
+
         $this->setUser($user);
+    }
+
+    private function solveLang()
+    {
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $this->schema::LANG_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
+
+        $lang = $this->paramFetcher->get($this->schema::LANG_KEY);
+
+        $this->translator->setLocale($lang ?: 'en');
     }
 
     /**
@@ -91,17 +109,45 @@ abstract class AEntityRequest
         if ($this->schema === null) {
             $this->schema = DefaultSchema::class;
         }
-        $this->checkUserRequirement();
-        $this->params->setRepository($this->repository);
-        $this->params->init($this->schema);
-        $this->solveIt();
+
+        try {
+            $this->solveLang();
+
+            $this->checkUserRequirement();
+
+            $this->params->setRepository($this->repository);
+            $this->params->init($this->schema);
+
+            $response['status'] = null;
+
+            $this->solveIt();
+        } catch (AuthenticationException $e) {
+            $response['status'] = false;
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.authRequired', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+        } catch (AccessDeniedException $e) {
+            $response['status'] = false;
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.accessDenied', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+        } catch (InternalException $e) {
+            $response['status'] = false;
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.internalError', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+        } catch (BadRequestException $e) {
+            $response['status'] = false;
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.badRequest', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+        } catch (ORMException $e) {
+            $response['status'] = false;
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.dbError', [], 'doctrine-api-mapper')];
+        } catch (\Exception $e) {
+            $response['status'] = false;
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.unknown', [], 'doctrine-api-mapper')];
+        }
+
         return $this->getResponse();
     }
 
     protected function checkUserRequirement(): void
     {
         if ($this->userRequired && !$this->user) {
-            throw new AuthenticationException('User not authenticated.');
+            throw new AuthenticationException($this->translator->trans('exception.userNotAuthenticated', [], 'doctrine-api-mapper'));
         }
     }
 

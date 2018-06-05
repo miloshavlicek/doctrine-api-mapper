@@ -12,20 +12,14 @@ class PutEntityRequest extends AEntityRequest implements IEntityRequest
     {
         $item = $this->repository->find($this->paramFetcher->get($this->schema::ENTITY_REQUEST_ID_KEY));
 
-        $response = [];
         if ($item) {
-            try {
-                $item = $this->mapEntitySet($item);
-                $this->em->persist($item);
-                $this->em->flush($item);
-                $response['status'] = true;
-            } catch (\Exception $e) {
-                $response['status'] = false;
-                $this->out['messages'][] = ['type' => 'err', 'Database exception'];
-            }
+            $item = $this->mapEntitySet($item);
+            $this->em->persist($item);
+            $this->em->flush($item);
+            $this->out['status'] = true;
         } else {
             $this->out['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', sprintf('Item by ID "%d" not found!', $this->paramFetcher->get('id'))];
+            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.itemNotFound', ['%id%' => $this->paramFetcher->get('id')], 'doctrine-api-mapper'))];
         }
     }
 

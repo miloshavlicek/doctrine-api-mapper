@@ -157,7 +157,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
         try {
             $items = $this->singleResult ? [$q->getSingleResult()] : $q->getResult();
         } catch (NoResultException $e) {
-            $this->out['messages'][] = ['type' => 'warn', 'text' => 'No results found!'];
+            $this->out['messages'][] = ['type' => 'warn', 'title' => $this->translator->trans('exception.noResults', [], 'doctrine-api-mapper')];
             $items = [];
         }
 

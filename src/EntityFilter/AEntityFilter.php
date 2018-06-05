@@ -5,6 +5,7 @@ namespace Miloshavlicek\DoctrineApiMapper\EntityFilter;
 use Doctrine\ORM\QueryBuilder;
 use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\ACLEntity\BlankACL;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 
 abstract class AEntityFilter implements IEntityFilter
 {
@@ -53,7 +54,7 @@ abstract class AEntityFilter implements IEntityFilter
     protected function setFilterOperator(string $value)
     {
         if (!in_array($value, ['AND', 'OR'])) {
-            throw new \Exception('Invalid value!');
+            throw new InternalException('Invalid value for setFilterOperator!');
         }
         $this->filterOperator = $value;
     }

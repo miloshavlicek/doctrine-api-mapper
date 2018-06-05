@@ -5,6 +5,7 @@ namespace Miloshavlicek\DoctrineApiMapper\Factory;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Params\DeleteParams;
 use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
 use Miloshavlicek\DoctrineApiMapper\Params\OptionsParams;
@@ -49,12 +50,12 @@ class EntityRequestFactory
      * @param string $repository
      * @param array $filter
      * @return IEntityRequest
-     * @throws \Exception
+     * @throws InternalException
      */
     public function create(string $method, IApiRepository $repository, ?IEntityFilter $filter = null, $user = null): IEntityRequest
     {
         if (!($repository instanceof IApiRepository)) {
-            throw new \Exception('Repository have to be instanceof IApiRepository');
+            throw new InternalException('Repository have to be instanceof IApiRepository');
         }
 
         switch ($method) {
@@ -83,7 +84,7 @@ class EntityRequestFactory
                 $params = OptionsParams::class;
                 break;
             default:
-                throw new \Exception(sprintf('Unsupported request method "%s".', $method));
+                throw new InternalException(sprintf('Unsupported request method "%s".', $method));
                 break;
         }
 
@@ -93,7 +94,7 @@ class EntityRequestFactory
         if ($filter && $method === 'GET') {
             $solver->setFilter($filter);
         } elseif ($filter) {
-            throw new \Exception('Filter appliable only for GET queries.');
+            throw new InternalException('Filter appliable only for GET queries.');
         }
 
         return $solver;
