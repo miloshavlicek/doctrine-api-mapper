@@ -2,6 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Service;
 
+use Miloshavlicek\DoctrineApiMapper\EntityFilter\AEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Mapper\MapperFactory;
 use Miloshavlicek\DoctrineApiMapper\Solver;
 
