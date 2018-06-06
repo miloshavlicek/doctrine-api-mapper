@@ -10,7 +10,7 @@ class DeleteEntityRequest extends AEntityRequest implements IEntityRequest
      */
     protected function solveIt(): void
     {
-        $this->aclValidator->validateDelete($this->repository, null, $this->user);
+        $this->aclValidator->validateDelete($this->repository, [], $this->user);
 
         $item = $this->repository->find($this->paramFetcher->get($this->schema::ENTITY_REQUEST_ID_KEY));
 
