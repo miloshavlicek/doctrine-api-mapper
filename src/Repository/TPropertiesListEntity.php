@@ -22,7 +22,7 @@ trait TPropertiesListEntity
     private function aclsDefault(array $acls = []): array
     {
         if (count($acls) === 0) {
-            $acls['*'] = [$this->acl];
+            $acls['*'] = $this->acl;
         }
 
         return $acls;
