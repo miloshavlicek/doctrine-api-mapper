@@ -73,7 +73,7 @@ class ACLValidator
 
     public function validateWrite(IApiRepository $baseRepository, array $params, ?AACL $acl = null, $user = null)
     {
-        $this->validate('write', $params, $acl, $user);
+        $this->validate($baseRepository, 'write', $params, $acl, $user);
     }
 
     public function validateDelete(IApiRepository $baseRepository, ?AACL $acl = null, $user = null)
