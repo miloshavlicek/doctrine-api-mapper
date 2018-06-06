@@ -133,10 +133,10 @@ abstract class AEntityRequest
         } catch (ORMException $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.dbError', [], 'doctrine-api-mapper')];
-        } /*catch (\Exception $e) {
+        } catch (\Exception $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.unknown', [], 'doctrine-api-mapper')];
-        }*/
+        }
 
         return $this->getResponse();
     }
