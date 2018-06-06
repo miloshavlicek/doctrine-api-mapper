@@ -2,7 +2,6 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Service;
 
-use App\ACLEntity\AACL;
 use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
@@ -21,15 +20,15 @@ class ACLValidator
         $this->translator = $translator;
     }
 
-    public function validateRead(IApiRepository $baseRepository, array $params, ?AACL $acl = null, $user = null)
+    public function validateRead(IApiRepository $baseRepository, array $params, array $acls = [], $user = null)
     {
-        $this->validate($baseRepository, 'read', $params, $acl, $user);
+        $this->validate($baseRepository, 'read', $params, $acls, $user);
     }
 
-    private function validate(IApiRepository $baseRepository, string $access, array $params, ?AACL $acl = null, $user = null)
+    private function validate(IApiRepository $baseRepository, string $access, array $params, array $acls = [], $user = null)
     {
-        if ($acl === null) {
-            $acl = $baseRepository->getAcl();
+        if ($baseRepository->getAcl()) {
+            $acls['*'] = $baseRepository->getAcl();
         }
 
         foreach ($params as $param) {
@@ -46,20 +45,20 @@ class ACLValidator
                     if (!$innerRepository->hasEntityJoin($explode)) {
                         throw new AccessDeniedException($this->translator->trans('exception.joinNotSupported', ['%param%' => $param, '%level%' => $level, '%explode%' => $explode], 'doctrine-api-mapper'));
                     }
-                    if (!$innerRepository->hasPermissionEntityJoin($explode, $level === 1 ? $acl : $innerRepository->getAcl())) {
+                    if (!$innerRepository->hasPermissionEntityJoin($explode, $level === 1 ? $acls : [$innerRepository->getAcl()])) {
                         throw new AccessDeniedException($this->translator->trans('exception.insufPermJoin', ['%param%' => $param, '%level%' => $level, '%explode%' => $explode], 'doctrine-api-mapper'));
                     }
 
-                    $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $acl : $innerRepository->getAcl());
+                    $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $acls : [$innerRepository->getAcl()]);
                     $innerRepository->setUser($user);
                 } else { // is last child, so it is property
                     if ($access === 'read') {
-                        if ($explode !== 'id' && !in_array($explode, $innerRepository->getEntityReadProperties($level === 1 ? $acl : $innerRepository->getAcl()))) {
+                        if ($explode !== 'id' && !in_array($explode, $innerRepository->getEntityReadProperties($level === 1 ? $acls : [$innerRepository->getAcl()]))) {
                             // everyone has access to id if has access to join
                             throw new AccessDeniedException($this->translator->trans('exception.propertyNotReadable', ['%param%' => $param], 'doctrine-api-mapper'));
                         }
                     } elseif ($access === 'write') {
-                        if (!in_array($explode, $innerRepository->getEntityWriteProperties($level === 1 ? $acl : $innerRepository->getAcl()))) {
+                        if (!in_array($explode, $innerRepository->getEntityWriteProperties($level === 1 ? $acls : [$innerRepository->getAcl()]))) {
                             // everyone has access to id if has access to join
                             throw new AccessDeniedException($this->translator->trans('exception.propertyNotWritable', ['%param%' => $param], 'doctrine-api-mapper'));
                         }
@@ -71,20 +70,24 @@ class ACLValidator
         }
     }
 
-    public function validateWrite(IApiRepository $baseRepository, array $params, ?AACL $acl = null, $user = null)
+    public function validateWrite(IApiRepository $baseRepository, array $params, array $acls = [], $user = null)
     {
-        $this->validate($baseRepository, 'write', $params, $acl, $user);
+        $this->validate($baseRepository, 'write', $params, $acls, $user);
     }
 
-    public function validateDelete(IApiRepository $baseRepository, ?AACL $acl = null, $user = null)
+    public function validateDelete(IApiRepository $baseRepository, array $acls = [], $user = null)
     {
-        if ($acl === null) {
-            $acl = $baseRepository->getAcl();
+        if ($baseRepository->getAcl()) {
+            $acls['*'] = $baseRepository->getAcl();
         }
 
-        if (!$acl->getEntityDeletePermission($user ? $user->getRoles() : [])) {
-            throw new AccessDeniedException($this->translator->trans('exception.insufficientPermissions', ['%param%' => $param], 'doctrine-api-mapper'));
+        foreach($acls as $acl) {
+            if ($acl->getEntityDeletePermission($user ? $user->getRoles() : [])) {
+                return;
+            }
         }
+
+        throw new AccessDeniedException($this->translator->trans('exception.insufficientPermissions', ['%param%' => $param], 'doctrine-api-mapper'));
     }
 
 }

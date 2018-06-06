@@ -54,11 +54,11 @@ class EntityRequestFactory
     /**
      * @param string $method
      * @param string $repository
-     * @param array $filter
+     * @param IEntityFilter[] $filters
      * @return IEntityRequest
      * @throws InternalException
      */
-    public function create(string $method, IApiRepository $repository, ?IEntityFilter $filter = null, $user = null): IEntityRequest
+    public function create(string $method, IApiRepository $repository, array $filters = [], $user = null): IEntityRequest
     {
         if (!($repository instanceof IApiRepository)) {
             throw new InternalException('Repository have to be instanceof IApiRepository');
@@ -97,10 +97,8 @@ class EntityRequestFactory
         $solver = new $class($this->paramFetcher, $params, $this->em, $this->translator, $this->aclValidator, $user);
         $solver->setRepository($repository);
 
-        if ($filter && $method === 'GET') {
-            $solver->setFilter($filter);
-        } elseif ($filter) {
-            throw new InternalException('Filter appliable only for GET queries.');
+        foreach($filters as $filterKey => $filter) {
+            $solver->addFilter($filterKey, $filter);
         }
 
         return $solver;

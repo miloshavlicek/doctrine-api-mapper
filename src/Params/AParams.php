@@ -6,6 +6,7 @@ use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Controller\Annotations\RequestParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
 abstract class AParams
@@ -26,8 +27,8 @@ abstract class AParams
     /** @var string */
     protected $schema;
 
-    /** @var AACL */
-    private $acl;
+    /** @var AACL[] */
+    private $acls = [];
 
     private $user;
 
@@ -69,33 +70,37 @@ abstract class AParams
     public function setRepository(IApiRepository $repository): void
     {
         $this->repository = $repository;
-        $this->setAcl($repository->getAcl());
+        $this->acls['*'] = $repository->getAcl();
+    }
+
+    /**
+     * @param string|int $filterName
+     * @param AACL|null $acl
+     * @param bool $overwrite
+     * @throws InternalException
+     */
+    public function setAcl($filterName, ?AACL $acl, bool $overwrite = false): void
+    {
+        if (!$overwrite && isset($this->acls[$filterName])) {
+            throw new InternalException('ACL with the same name already set.');
+        }
+
+        $this->acls[$filterName] = $acl;
     }
 
     /**
      * @param string $prefix
      */
-    protected function attachAllRepositoryReadPropertiesToUrl(string $prefix = ''): void
+    protected function attachAllRepositoryReadPropertiesToUrl(string $prefix): void
     {
-        $read = $this->getAcl()->getEntityReadProperties($this->getUserRoles());
-        $joins = $this->getAcl()->getEntityJoinsPermissions($this->getUserRoles());
-
-        $this->attachPropertiesToUrl(array_merge($read, $joins), $prefix);
-    }
-
-    public function getAcl(): ?AACL
-    {
-        return $this->acl;
-    }
-
-    public function setAcl(?AACL $acl): void
-    {
-        if ($this->acl) {
-            /** hotfix TODO: solve */
-            return;
+        $read = [];
+        $joins = [];
+        foreach ($this->acls as $acl) {
+            $read = array_merge($read, $acl->getEntityReadProperties($this->getUserRoles()));
+            $joins = array_merge($joins, $acl->getEntityJoinsPermissions($this->getUserRoles()));
         }
 
-        $this->acl = $acl;
+        $this->attachPropertiesToUrl(array_merge($read, $joins), $prefix);
     }
 
     protected function getUserRoles(): array
@@ -107,7 +112,7 @@ abstract class AParams
      * @param array $properties
      * @param string $prefix
      */
-    protected function attachPropertiesToUrl(array $properties, string $prefix = ''): void
+    private function attachPropertiesToUrl(array $properties, string $prefix = ''): void
     {
         // Query = GET, Request = POST/DELETE/PUT/PATCH
         foreach ($properties as $property) {
@@ -129,12 +134,16 @@ abstract class AParams
     /**
      * @param string $prefix
      */
-    protected function attachAllRepositoryWritePropertiesToUrl(string $prefix = ''): void
+    protected function attachAllRepositoryWritePropertiesToUrl(string $prefix): void
     {
-        $read = $this->getAcl()->getEntityReadProperties($this->getUserRoles());
-        $joins = $this->getAcl()->getEntityJoinsPermissions($this->getUserRoles());
+        $write = [];
+        $joins = [];
+        foreach ($this->acls as $acl) {
+            $write = array_merge($write, $acl->getEntityWriteProperties($this->getUserRoles()));
+            $joins = array_merge($joins, $acl->getEntityJoinsPermissions($this->getUserRoles()));
+        }
 
-        $this->attachPropertiesToUrl(array_merge($read, $joins), $prefix);
+        $this->attachPropertiesToUrl(array_merge($write, $joins), $prefix);
     }
 
 }

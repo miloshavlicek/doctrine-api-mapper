@@ -11,7 +11,6 @@ exception:
   badRequest_offsetOrPage: 'You can you use offset, or page param, not both.'
   badRequest_limitReqIfPage: 'If using page param, limit param is required.'
   authRequired: 'Authentication required!'
-  userNotAuthenticated: 'User not authenticated!'
   insufficientPermissions: 'Insufficient permissions!'
   insufPermJoin: 'Insufficient permissions for join "%param%" (level: %level% "%explode%").'
   joinNotSuppported: 'Join "%param%" not supported (level: %level% "%explode%").'

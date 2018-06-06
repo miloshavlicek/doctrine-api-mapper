@@ -6,8 +6,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMException;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
-use Miloshavlicek\DoctrineApiMapper\ACLEntity\AACL;
-use Miloshavlicek\DoctrineApiMapper\Service\ACLValidator;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
 use Miloshavlicek\DoctrineApiMapper\EntityFilter\IEntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
@@ -18,6 +16,7 @@ use Miloshavlicek\DoctrineApiMapper\Params\GetParams;
 use Miloshavlicek\DoctrineApiMapper\Params\IParams;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Miloshavlicek\DoctrineApiMapper\Schema\DefaultSchema;
+use Miloshavlicek\DoctrineApiMapper\Service\ACLValidator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -34,9 +33,6 @@ abstract class AEntityRequest
         'messages' => [],
         'status' => true
     ];
-
-    /** @var bool */
-    protected $userRequired = false;
 
     /** @var IParams */
     protected $params;
@@ -56,8 +52,8 @@ abstract class AEntityRequest
     /** @var IApiRepository */
     protected $repository;
 
-    /** @var IEntityFilter|null */
-    protected $filter;
+    /** @var IEntityFilter[] */
+    protected $filters = [];
 
     /** @var TranslatorInterface */
     protected $translator;
@@ -104,23 +100,6 @@ abstract class AEntityRequest
     }
 
     /**
-     * @return IEntityFilter|null
-     */
-    public function getFilter(): ?IEntityFilter
-    {
-        return $this->filter;
-    }
-
-    /**
-     * @param IEntityFilter|null $filter
-     */
-    public function setFilter(?IEntityFilter $filter): void
-    {
-        $this->filter = $filter;
-        $this->params->setAcl($filter->getAcl());
-    }
-
-    /**
      * @return array
      */
     public function solve(): array
@@ -131,8 +110,7 @@ abstract class AEntityRequest
 
         try {
             $this->solveLang();
-
-            $this->checkUserRequirement();
+            $this->solveFilters();
 
             $this->params->setRepository($this->repository);
             $this->params->init($this->schema);
@@ -155,11 +133,10 @@ abstract class AEntityRequest
         } catch (ORMException $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.dbError', [], 'doctrine-api-mapper')];
-        } catch (\Exception $e) {
+        } /*catch (\Exception $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.unknown', [], 'doctrine-api-mapper')];
-            var_dump($e->getMessage());
-        }
+        }*/
 
         return $this->getResponse();
     }
@@ -176,11 +153,39 @@ abstract class AEntityRequest
         $this->translator->setLocale($lang ?: 'en');
     }
 
-    protected function checkUserRequirement(): void
+    private function solveFilters()
     {
-        if ($this->userRequired && !$this->user) {
-            throw new AuthenticationException($this->translator->trans('exception.userNotAuthenticated', [], 'doctrine-api-mapper'));
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $this->schema::FILTER_KEY;
+        $dynamicParam->nullable = true;
+        $this->paramFetcher->addParam($dynamicParam);
+
+        $filters = $this->paramFetcher->get($this->schema::FILTER_KEY);
+        if ($filters) {
+            foreach (explode(',', $filters) as $filterName) {
+                if ($filter = $this->repository->getFilter($filterName)) {
+                    $this->addFilter($filterName, $filter);
+                } else {
+                    throw new BadRequestException('Filter not supported or insufficient rights.');
+                }
+            }
         }
+    }
+
+    /**
+     * @param string|int $name
+     * @param IEntityFilter $filter
+     * @param bool $overwrite
+     * @throws InternalException
+     */
+    public function addFilter($name, IEntityFilter $filter, bool $overwrite = false): void
+    {
+        if (!$overwrite && isset($this->filters[$name])) {
+            throw new InternalException('Filter with the same name already set.');
+        }
+
+        $this->filters[$name] = $filter;
+        $this->params->setAcl($name, $filter->getAcl());
     }
 
     /**
@@ -211,14 +216,6 @@ abstract class AEntityRequest
     public function getParams(): ?IParams
     {
         return $this->params;
-    }
-
-    /**
-     * @param bool $val
-     */
-    public function setUserRequired(bool $val = true): void
-    {
-        $this->userRequired = $val;
     }
 
     /**
@@ -268,7 +265,7 @@ abstract class AEntityRequest
     protected function mapEntitySet($entity)
     {
         $params = $this->filterEntityNamesByPrefix();
-        $this->aclValidator->validateWrite($this->repository, $params, $this->getAcl(), $this->user);
+        $this->aclValidator->validateWrite($this->repository, $params, $this->getAcls(), $this->user);
         return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties()))->resolveSet($params);
     }
 
@@ -289,13 +286,17 @@ abstract class AEntityRequest
         return $out;
     }
 
-    protected function getAcl(): ?AACL
+    protected function getAcls(): array
     {
-        if ($this->filter && $this->filter->getAcl()) {
-            return $this->filter->getAcl();
+        $out = [$this->repository->getAcl()];
+
+        foreach ($this->filters as $filter) {
+            if ($filter->getAcl()) {
+                $out[] = $filter->getAcl();
+            }
         }
 
-        return $this->repository->getAcl();
+        return $out;
     }
 
 }

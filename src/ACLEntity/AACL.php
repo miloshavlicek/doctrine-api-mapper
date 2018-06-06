@@ -4,16 +4,15 @@ namespace Miloshavlicek\DoctrineApiMapper\ACLEntity;
 
 use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 
-abstract class AACL
+class AACL
 {
     protected $properties = [];
     protected $joins = [];
-
-    protected $acls = [
+    private $permissions = [
         'full' => [],
         'read' => [],
         'write' => [],
-        'joins' => [],
+        'join' => [],
         'delete' => []
     ];
 
@@ -27,22 +26,22 @@ abstract class AACL
         return $this->solveAcl(['full', 'read'], $roles);
     }
 
-    private function solveAcl(array $acls, array $roles): array
+    private function solveAcl(array $permissions, array $roles): array
     {
         $a0 = [];
         $roles[] = '*';
         foreach ($roles as $role) {
             $a1 = [];
-            foreach ($acls as $acl) {
-                if (!isset($this->acls[$acl])) {
-                    throw new InternalException(sprintf('ACL %s not available.', $acl));
+            foreach ($permissions as $permission) {
+                if (!isset($this->permissions[$permission])) {
+                    throw new InternalException(sprintf('Permission %s not available.', $permission));
                 }
 
-                if (isset($this->acls[$acl][$role])) {
-                    if (in_array('*', $this->acls[$acl][$role])) {
-                        $a1 = array_merge($a1, $acl === 'joins' ? $this->joins : $this->properties);
+                if (isset($this->permissions[$permission][$role])) {
+                    if (in_array('*', $this->permissions[$permission][$role])) {
+                        $a1 = array_merge($a1, $permission === 'join' ? $this->joins : $this->properties);
                     } else {
-                        $a1 = array_merge($a1, $this->acls[$acl][$role]);
+                        $a1 = array_merge($a1, $this->permissions[$permission][$role]);
                     }
                 }
             }
@@ -66,7 +65,7 @@ abstract class AACL
     {
         $roles[] = '*';
         foreach ($roles as $role) {
-            if (isset($this->acls['delete'][$role]) && $this->acls['delete'][$role] === true) {
+            if (isset($this->permissions['delete'][$role]) && $this->permissions['delete'][$role] === true) {
                 return true;
             }
         }
@@ -75,7 +74,7 @@ abstract class AACL
 
     public function getEntityJoinsPermissions(array $roles = []): array
     {
-        return $this->solveAcl(['joins'], $roles);
+        return $this->solveAcl(['join'], $roles);
     }
 
     public function checkEntityJoin(array $roles = [], string $property): bool
@@ -84,7 +83,7 @@ abstract class AACL
             throw new InternalException(sprintf('Join "%s" not found!', $property));
         }
 
-        return in_array($property, $this->solveAcl(['joins'], $roles));
+        return in_array($property, $this->solveAcl(['join'], $roles));
     }
 
     /**
@@ -94,45 +93,45 @@ abstract class AACL
     {
         $this->append('full', $roles, ['*']);
         $this->append('delete', $roles, true);
-        $this->append('joins', $roles, ['*']);
+        $this->append('join', $roles, ['*']);
     }
 
     /**
-     * @param string $acl
+     * @param string $permission
      * @param string|array $roles
      * @param $value
      */
-    protected function append(string $acl, $roles, $value)
+    protected function append(string $permission, $roles, $value)
     {
         if (!is_array($roles)) {
             $roles = [$roles];
         }
 
         foreach ($roles as $role) {
-            $this->appendOne($acl, $role, $value);
+            $this->appendOne($permission, $role, $value);
         }
     }
 
     /**
-     * @param string $acl
+     * @param string $permission
      * @param string $role
      * @param $value
      * @throws InternalException
      */
-    protected function appendOne(string $acl, string $role, $value)
+    protected function appendOne(string $permission, string $role, $value)
     {
-        if (!isset($this->acls[$acl])) {
-            throw new InternalException(sprintf('ACL %s not available for append.', $acl));
+        if (!isset($this->permissions[$permission])) {
+            throw new InternalException(sprintf('Permission %s not available for append.', $permission));
         }
 
-        if (!isset($this->acls[$acl][$role])) {
-            $this->acls[$acl][$role] = [];
+        if (!isset($this->permissions[$permission][$role])) {
+            $this->permissions[$permission][$role] = [];
         }
 
-        if ($acl === 'delete') {
-            $this->acls[$acl][$role] = $value;
+        if ($permission === 'delete') {
+            $this->permissions[$permission][$role] = $value;
         } else {
-            $this->acls[$acl][$role] = array_merge($this->acls[$acl][$role], $value);
+            $this->permissions[$permission][$role] = array_merge($this->permissions[$permission][$role], $value);
         }
     }
 

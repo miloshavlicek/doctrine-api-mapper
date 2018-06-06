@@ -11,7 +11,6 @@ exception:
   badRequest_offsetOrPage: 'Můžete použít buď ofset, nebo stránkovací parametr, ale ne oba parametry.'
   badRequest_limitReqIfPage: 'Při použití stránkovacího parametru je vyžadován limit.'
   authRequired: 'Vyžadováno přihlášení!'
-  userNotAuthenticated: 'Uživatel není přihlášen!'
   insufficientPermissions: 'Nemáte dostatečná oprávnění!'
   insufPermJoin: 'Nemáte oprávnení pro propojení "%param%" (úroveň: %level% "%explode%").'
   joinNotSupported: 'Propojení "%param%" není podporováno (úroveň: %level% "%explode%").'

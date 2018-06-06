@@ -67,7 +67,11 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
         $this->mapCriteria($qb, $this->schema::FILTER_PREFIX);
 
-        $this->filter && $this->filter->appendQb($qb);
+        $i = 0;
+        foreach ($this->filters as $filter) {
+            $filter->appendQb($qb, $i);
+            $i++;
+        }
 
         for ($i = 0; isset($this->params->getSort()[$i]); $i++) {
             $qb->addOrderBy(
@@ -87,7 +91,13 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     {
         $criteria = [];
 
-        foreach ($this->getAcl()->getEntityReadProperties($this->getUserRoles()) as $property) {
+        $read = [];
+
+        foreach ($this->getAcls() as $acl) {
+            $read = array_merge($read, $acl->getEntityReadProperties($this->getUserRoles()));
+        }
+
+        foreach ($read as $property) {
             if ($this->paramFetcher->get($filterPrefix . $property) !== null) {
                 $criteria[ParamToEntityMethod::translate($property)] = $this->paramFetcher->get($filterPrefix . $property);
             }
@@ -102,15 +112,27 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
     private function processPermissions()
     {
-        $acl = $this->getAcl();
+        $acls = $this->getAcls();
+
+        $read = [];
+        $write = [];
+        $delete = false;
+        $join = [];
+
+        foreach ($acls as $acl) {
+            $read = array_merge($read, $acl->getEntityReadProperties($this->getUserRoles()));
+            $write = array_merge($write, $acl->getEntityWriteProperties($this->getUserRoles()));
+            if ($acl->getEntityDeletePermission($this->getUserRoles())) {
+                $delete = true;
+            }
+            $join = array_merge($join, $acl->getEntityJoinsPermissions($this->getUserRoles()));
+        }
 
         $this->out['permissions'] = [
-            'default' => [
-                'read' => $acl->getEntityReadProperties($this->getUserRoles()),
-                'write' => $acl->getEntityWriteProperties($this->getUserRoles()),
-                'delete' => $acl->getEntityDeletePermission($this->getUserRoles()),
-                'joins' => $acl->getEntityJoinsPermissions($this->getUserRoles())
-            ]
+            'read' => $read,
+            'write' => $write,
+            'delete' => $delete,
+            'join' => $join
         ];
     }
 
@@ -144,7 +166,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
      */
     private function mapEntityGet($entity, array $params)
     {
-        $this->aclValidator->validateRead($this->repository, $params, $this->getAcl(), $this->user);
+        $this->aclValidator->validateRead($this->repository, $params, $this->getAcls(), $this->user);
         return (new ParamToEntityMethod($entity, $params))->resolveGet();
     }
 

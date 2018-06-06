@@ -2,18 +2,22 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Service;
 
-use Miloshavlicek\DoctrineApiMapper\EntityFilter\AEntityFilter;
+use Miloshavlicek\DoctrineApiMapper\EntityFilter\EntityFilter;
 use Miloshavlicek\DoctrineApiMapper\Mapper\MapperFactory;
 use Miloshavlicek\DoctrineApiMapper\Solver;
 
-class EntityFilterFactory extends AEntityFilter
+class EntityFilterFactory
 {
 
-    public function __construct(array $filter, ?string $acl = null, $filterOperator = null)
+    public function create(array $filterFields, ?string $acl = null, $filterOperator = null): EntityFilter
     {
-        $this->filter = $filter;
-        $filterOperator && $this->filterOperator = $this->setFilterOperator($filterOperator);
-        $acl && $this->setAcl(new $acl());
+        $filter = new EntityFilter;
+
+        $filter->setFilter($filterFields);
+        $filterOperator && $filter->setFilterOperator($filterOperator);
+        $acl && $filter->setAcl(new $acl());
+
+        return $filter;
     }
 
 }

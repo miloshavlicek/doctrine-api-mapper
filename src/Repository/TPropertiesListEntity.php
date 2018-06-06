@@ -2,18 +2,30 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Repository;
 
-use App\ACLEntity\AACL;
+use Miloshavlicek\DoctrineApiMapper\Exception\AccessDeniedException;
 
 trait TPropertiesListEntity
 {
 
-    public function getEntityReadProperties(?AACL $acl = null): array
+    public function getEntityReadProperties(array $acls = []): array
     {
-        if (!$acl) {
-            $acl = $this->acl;
+        $acls = $this->aclsDefault($acls);
+
+        $out = [];
+        foreach ($acls as $acl) {
+            $out = array_merge($out, $acl->getEntityReadProperties($this->getUserRoles()));
         }
 
-        return $acl->getEntityReadProperties($this->getUserRoles());
+        return $out;
+    }
+
+    private function aclsDefault(array $acls = []): array
+    {
+        if (count($acls) === 0) {
+            $acls['*'] = [$this->acl];
+        }
+
+        return $acls;
     }
 
     private function getUserRoles(): array
@@ -21,21 +33,26 @@ trait TPropertiesListEntity
         return $this->user ? $this->user->getRoles() : [];
     }
 
-    public function getEntityWriteProperties(?AACL $acl = null): array
+    public function getEntityWriteProperties(array $acls = []): array
     {
-        if (!$acl) {
-            $acl = $this->acl;
+        $acls = $this->aclsDefault($acls);
+
+        $out = [];
+        foreach ($acls as $acl) {
+            $out = array_merge($out, $acl->getEntityWriteProperties($this->getUserRoles()));
         }
-        return $acl->getEntityWriteProperties($this->getUserRoles());
+
+        return $out;
     }
 
-    public function getEntityJoin(string $property, ?AACL $acl = null): IApiRepository
+    public function getEntityJoin(string $property, array $acls = []): IApiRepository
     {
-        if (!$acl) {
-            $acl = $this->acl;
-        }
-        if ($this->hasEntityJoin($property) && $this->hasPermissionEntityJoin($property)) {
+        $acls = $this->aclsDefault($acls);
+
+        if ($this->hasEntityJoin($property) && $this->hasPermissionEntityJoin($property, $acls)) {
             return $this->joins[$property];
+        } else {
+            throw new AccessDeniedException('Insufficient rights for join.');
         }
     }
 
@@ -44,12 +61,17 @@ trait TPropertiesListEntity
         return !empty($this->joins[$property]);
     }
 
-    public function hasPermissionEntityJoin(string $property, ?AACL $acl = null): bool
+    public function hasPermissionEntityJoin(string $property, array $acls = []): bool
     {
-        if (!$acl) {
-            $acl = $this->acl;
+        $acls = $this->aclsDefault($acls);
+
+        foreach ($acls as $acl) {
+            if ($acl->checkEntityJoin($this->user->getRoles(), $property)) {
+                return true;
+            }
         }
-        return $acl->checkEntityJoin($this->user->getRoles(), $property);
+
+        return false;
     }
 
 }
