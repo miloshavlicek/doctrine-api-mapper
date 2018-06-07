@@ -14,7 +14,6 @@ class PatchEntityRequest extends AEntityRequest implements IEntityRequest
 
         if ($item) {
             $item = $this->mapEntitySet($item);
-
             $this->em->persist($item);
             $this->em->flush($item);
             $this->out['status'] = true;

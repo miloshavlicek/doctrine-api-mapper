@@ -2,7 +2,9 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Mapper;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
+use Miloshavlicek\DoctrineApiMapper\Exception\BadRequestException;
 
 class ParamToEntityMethod
 {
@@ -13,15 +15,19 @@ class ParamToEntityMethod
     /** @var array */
     private $params = [];
 
+    /** @var array */
+    private $joins = [];
+
     /**
      * ParamToEntityMethod constructor.
      * @param $entity
      * @param array $params
      */
-    public function __construct($entity, array $params)
+    public function __construct($entity, array $params, array $joins = [])
     {
         $this->entity = $entity;
         $this->params = $params;
+        $this->joins = $joins;
     }
 
     /**
@@ -87,8 +93,18 @@ class ParamToEntityMethod
     {
         foreach ($this->params as $param) {
             $method = self::translate($param, $prefix);
+
             if (isset($values[$param])) {
-                $this->entity->$method($values[$param]);
+                if (in_array($param, array_keys($this->joins))) {
+                    $joinEntity = $this->joins[$param]->find($values[$param]);
+                    if ($joinEntity) {
+                        $this->entity->$method($joinEntity);
+                    } else {
+                        throw new BadRequestException('Joined entity not found!');
+                    }
+                } else {
+                    $this->entity->$method($values[$param]);
+                }
             }
         }
         return $this->entity;

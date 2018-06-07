@@ -23,7 +23,7 @@ class AACL
 
     public function getEntityReadProperties(array $roles = []): array
     {
-        return $this->solveAcl(['full', 'read'], $roles);
+        return array_unique($this->solveAcl(['full', 'read'], $roles));
     }
 
     private function solveAcl(array $permissions, array $roles): array
@@ -39,7 +39,7 @@ class AACL
 
                 if (isset($this->permissions[$permission][$role])) {
                     if (in_array('*', $this->permissions[$permission][$role])) {
-                        $a1 = array_merge($a1, $permission === 'join' ? $this->joins : $this->properties);
+                        $a1 = array_merge($a1, $permission === 'join' ? $this->joins : array_merge($this->properties, $this->joins));
                     } else {
                         $a1 = array_merge($a1, $this->permissions[$permission][$role]);
                     }
@@ -53,12 +53,12 @@ class AACL
 
     public function getEntityWriteProperties(array $roles = []): array
     {
-        return $this->solveAcl(['full', 'write'], $roles);
+        return array_unique($this->solveAcl(['full', 'write'], $roles));
     }
 
     public function getEntityDeletePermission(array $roles = []): bool
     {
-        return $this->solveAclDelete($roles);
+        return array_unique($this->solveAclDelete($roles));
     }
 
     private function solveAclDelete(array $roles): bool

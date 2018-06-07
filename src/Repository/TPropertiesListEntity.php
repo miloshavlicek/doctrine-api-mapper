@@ -16,12 +16,12 @@ trait TPropertiesListEntity
             $out = array_merge($out, $acl->getEntityReadProperties($this->getUserRoles()));
         }
 
-        return $out;
+        return array_unique($out);
     }
 
     private function aclsDefault(array $acls = []): array
     {
-        if (count($acls) === 0) {
+        if ($acls === []) {
             $acls['*'] = $this->acl;
         }
 
@@ -42,7 +42,31 @@ trait TPropertiesListEntity
             $out = array_merge($out, $acl->getEntityWriteProperties($this->getUserRoles()));
         }
 
+        return array_unique($out);
+    }
+
+    public function getEntityJoins(array $acls = []): array
+    {
+        $joins = $this->getEntityJoinsPermissions($acls);
+
+        $out = [];
+        foreach ($joins as $join) {
+            $out[$join] = $this->getEntityJoin($join, $acls);
+        }
+
         return $out;
+    }
+
+    public function getEntityJoinsPermissions(array $acls = []): array
+    {
+        $acls = $this->aclsDefault($acls);
+
+        $out = [];
+        foreach ($acls as $acl) {
+            $out = array_merge($out, $acl->getEntityJoinsPermissions($this->getUserRoles()));
+        }
+
+        return array_unique($out);
     }
 
     public function getEntityJoin(string $property, array $acls = []): IApiRepository

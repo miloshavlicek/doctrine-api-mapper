@@ -133,10 +133,10 @@ abstract class AEntityRequest
         } catch (ORMException $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.dbError', [], 'doctrine-api-mapper')];
-        } catch (\Exception $e) {
+        } /*catch (\Exception $e) {
             $response['status'] = false;
             $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.unknown', [], 'doctrine-api-mapper')];
-        }
+        }*/
 
         return $this->getResponse();
     }
@@ -265,8 +265,8 @@ abstract class AEntityRequest
     protected function mapEntitySet($entity)
     {
         $params = $this->filterEntityNamesByPrefix();
-        $this->aclValidator->validateWrite($this->repository, $params, $this->getAcls(), $this->user);
-        return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties()))->resolveSet($params);
+        $this->aclValidator->validateWrite($this->repository, array_keys($params), $this->getAcls(), $this->user);
+        return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties($this->getAcls()), $this->repository->getEntityJoins($this->getAcls())))->resolveSet($params);
     }
 
     /**
@@ -276,10 +276,9 @@ abstract class AEntityRequest
     private function filterEntityNamesByPrefix(): array
     {
         $out = [];
-
         foreach ($this->paramFetcher->all() as $entityKey => $entity) {
-            if (substr($entity, 0, strlen($this->schema::ENTITY_PREFIX) - 1) === $this->schema::ENTITY_PREFIX) {
-                $out[] = substr($entity, strlen($this->schema::ENTITY_PREFIX));
+            if (substr($entityKey, 0, strlen($this->schema::ENTITY_PREFIX)) === $this->schema::ENTITY_PREFIX) {
+                $out[substr($entityKey, strlen($this->schema::ENTITY_PREFIX))] = $this->paramFetcher->get($entityKey);
             }
         }
 

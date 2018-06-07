@@ -143,7 +143,7 @@ abstract class AParams
             $joins = array_merge($joins, $acl->getEntityJoinsPermissions($this->getUserRoles()));
         }
 
-        $this->attachPropertiesToUrl(array_merge($write, $joins), $prefix);
+        $this->attachPropertiesToUrl(array_unique(array_merge($write, $joins)), $prefix);
     }
 
 }

@@ -167,7 +167,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     private function mapEntityGet($entity, array $params)
     {
         $this->aclValidator->validateRead($this->repository, $params, $this->getAcls(), $this->user);
-        return (new ParamToEntityMethod($entity, $params))->resolveGet();
+        return (new ParamToEntityMethod($entity, $params, $this->repository->getEntityJoins($this->getAcls())))->resolveGet();
     }
 
 
