@@ -96,8 +96,8 @@ class ParamToEntityMethod
 
             if (isset($values[$param])) {
                 if (in_array($param, array_keys($this->joins))) {
-                    if ($this->joins[$param]) {
-                        throw new InternalException('Join repository not specified!');
+                    if (!$this->joins[$param]) {
+                        throw new InternalException('Join repository not specified for resolveSet()!');
                     }
 
                     $joinEntity = $this->joins[$param]->find($values[$param]);

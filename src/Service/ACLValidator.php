@@ -52,7 +52,7 @@ class ACLValidator
                     $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $acls : [$innerRepository->getAcl()]);
 
                     if ($innerRepository === null) {
-                        throw new InternalException('Join repository not speficied.');
+                        throw new InternalException('Join repository not specified.');
                     }
 
                     $innerRepository->setUser($user);
