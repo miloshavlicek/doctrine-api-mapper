@@ -65,18 +65,20 @@ trait TPropertiesListEntity
         foreach ($acls as $acl) {
             $out = array_merge($out, $acl->getEntityJoinsPermissions($this->getUserRoles()));
         }
-
         return array_unique($out);
     }
 
-    public function getEntityJoin(string $property, array $acls = []): IApiRepository
+    public function getEntityJoin(string $property, array $acls = []): ?IApiRepository
     {
         $acls = $this->aclsDefault($acls);
 
         if ($this->hasEntityJoin($property) && $this->hasPermissionEntityJoin($property, $acls)) {
             return $this->joins[$property];
+        } elseif (!$this->hasEntityJoin($property)) {
+            // Join repository not speficied
+            return null;
         } else {
-            throw new AccessDeniedException('Insufficient rights for join.');
+            throw new AccessDeniedException(sprintf('Insufficient rights for join "%s".', $property));
         }
     }
 

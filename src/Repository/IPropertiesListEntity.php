@@ -8,6 +8,6 @@ interface IPropertiesListEntity
 
     public function getEntityWriteProperties();
 
-    public function getEntityJoin(string $property): IApiRepository;
+    public function getEntityJoin(string $property, array $acls = []): ?IApiRepository;
 
 }

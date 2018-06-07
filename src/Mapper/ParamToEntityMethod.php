@@ -2,9 +2,9 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Mapper;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
 use Miloshavlicek\DoctrineApiMapper\Exception\BadRequestException;
+use Miloshavlicek\DoctrineApiMapper\Exception\InternalException;
 
 class ParamToEntityMethod
 {
@@ -96,6 +96,10 @@ class ParamToEntityMethod
 
             if (isset($values[$param])) {
                 if (in_array($param, array_keys($this->joins))) {
+                    if ($this->joins[$param]) {
+                        throw new InternalException('Join repository not specified!');
+                    }
+
                     $joinEntity = $this->joins[$param]->find($values[$param]);
                     if ($joinEntity) {
                         $this->entity->$method($joinEntity);

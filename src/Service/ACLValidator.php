@@ -50,6 +50,11 @@ class ACLValidator
                     }
 
                     $innerRepository = $innerRepository->getEntityJoin($explode, $level === 1 ? $acls : [$innerRepository->getAcl()]);
+
+                    if ($innerRepository === null) {
+                        throw new InternalException('Join repository not speficied.');
+                    }
+
                     $innerRepository->setUser($user);
                 } else { // is last child, so it is property
                     if ($access === 'read') {
@@ -81,7 +86,7 @@ class ACLValidator
             $acls['*'] = $baseRepository->getAcl();
         }
 
-        foreach($acls as $acl) {
+        foreach ($acls as $acl) {
             if ($acl->getEntityDeletePermission($user ? $user->getRoles() : [])) {
                 return;
             }

@@ -58,7 +58,7 @@ class AACL
 
     public function getEntityDeletePermission(array $roles = []): bool
     {
-        return array_unique($this->solveAclDelete($roles));
+        return $this->solveAclDelete($roles);
     }
 
     private function solveAclDelete(array $roles): bool
