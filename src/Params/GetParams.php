@@ -10,6 +10,9 @@ class GetParams extends AParams implements IParams
     /** @var bool */
     protected $isRequest = false;
 
+    /** @var string */
+    private $export;
+
     /** @var int|null */
     private $limit;
 
@@ -113,6 +116,14 @@ class GetParams extends AParams implements IParams
     }
 
     /**
+     * @return string
+     */
+    public function getExport(): ?string
+    {
+        return $this->export;
+    }
+
+    /**
      * @return int|null
      */
     public function getLimit(): ?int
@@ -162,6 +173,7 @@ class GetParams extends AParams implements IParams
         $this->limit = $paramFetcher->get($schema::LIMIT_KEY);
         $this->offset = $paramFetcher->get($schema::OFFSET_KEY);
         $this->page = $paramFetcher->get($schema::PAGE_KEY);
+        $paramFetcher->get($schema::EXPORT_KEY) && $this->export = $paramFetcher->get($schema::EXPORT_KEY);
         $paramFetcher->get($schema::SORT_KEY) && $this->sort = explode(',', $paramFetcher->get($schema::SORT_KEY));
         $paramFetcher->get($schema::ORDER_KEY) && $this->order = explode(',', $paramFetcher->get($schema::ORDER_KEY));
         $paramFetcher->get($schema::FIELDS_KEY) && $this->fields = explode(',', $paramFetcher->get($schema::FIELDS_KEY));
@@ -169,6 +181,7 @@ class GetParams extends AParams implements IParams
         in_array($paramFetcher->get($schema::I_PERM_KEY), ['0', '1']) && $this->showPermissions = $paramFetcher->get($schema::I_PERM_KEY) === "1";
         in_array($paramFetcher->get($schema::I_RESULT_KEY), ['0', '1']) && $this->showResult = $paramFetcher->get($schema::I_RESULT_KEY) === "1";
         in_array($paramFetcher->get($schema::I_USER_KEY), ['0', '1']) && $this->showUser = $paramFetcher->get($schema::I_USER_KEY) === "1";
+
 
         if ($this->page) {
             $this->offset = $this->limit * ($this->page - 1);
@@ -187,6 +200,11 @@ class GetParams extends AParams implements IParams
 
         $dynamicParam = new QueryParam();
         $dynamicParam->name = $schema::FIELDS_KEY;
+        $dynamicParam->nullable = true;
+        $paramFetcher->addParam($dynamicParam);
+
+        $dynamicParam = new QueryParam();
+        $dynamicParam->name = $schema::EXPORT_KEY;
         $dynamicParam->nullable = true;
         $paramFetcher->addParam($dynamicParam);
 

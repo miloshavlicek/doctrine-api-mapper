@@ -21,6 +21,8 @@ class DefaultSchema
 
     const LANG_KEY = '_lang';
 
+    const EXPORT_KEY = '_export';
+
     const FILTER_PREFIX = 'f_';
 
     const ENTITY_PREFIX = 'e_';

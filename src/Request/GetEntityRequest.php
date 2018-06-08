@@ -4,6 +4,14 @@ namespace Miloshavlicek\DoctrineApiMapper\Request;
 
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
+use Miloshavlicek\DoctrineApiMapper\Exception\BadRequestException;
+use Miloshavlicek\DoctrineApiMapper\Export\Csv;
+use Miloshavlicek\DoctrineApiMapper\Export\Excel;
+use Miloshavlicek\DoctrineApiMapper\Export\Html;
+use Miloshavlicek\DoctrineApiMapper\Export\Json;
+use Miloshavlicek\DoctrineApiMapper\Export\Ods;
+use Miloshavlicek\DoctrineApiMapper\Export\Xls;
+use Miloshavlicek\DoctrineApiMapper\Export\Xlsx;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 
@@ -53,6 +61,10 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
         if ($this->params->isShowResult()) {
             $this->processResult($qb);
+        }
+
+        if ($export = $this->params->getExport()) {
+            $this->processExport($export);
         }
     }
 
@@ -168,6 +180,26 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
     {
         $this->aclValidator->validateRead($this->repository, $params, $this->getAcls(), $this->user);
         return (new ParamToEntityMethod($entity, $params, $this->repository->getEntityJoins($this->getAcls())))->resolveGet();
+    }
+
+    private function processExport(string $type)
+    {
+        if ($type === 'xlsx') {
+            $export = new Xlsx($this->out['result']);
+        } elseif ($type === 'xls') {
+            $export = new Xls($this->out['result']);
+        } elseif ($type === 'ods') {
+            $export = new Ods($this->out['result']);
+        } elseif ($type === 'csv') {
+            $export = new Csv($this->out['result']);
+        } elseif ($type === 'json') {
+            $export = new Json($this->out['result']);
+        } elseif ($type === 'html') {
+            $export = new Html($this->out['result']);
+        } else {
+            throw new BadRequestException(sprintf('Export to format %s is not supported.', $type));
+        }
+        $export->generateFile();
     }
 
 
