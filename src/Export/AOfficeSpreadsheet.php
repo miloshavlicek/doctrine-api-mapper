@@ -37,7 +37,7 @@ abstract class AOfficeSpreadsheet extends AExport
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $rowI = 0;
+        $rowI = 1;
         foreach ($this->data as $line) {
             // TODO: fix array of array (now ignored)
             $line = array_filter($line, function ($val) {
@@ -45,21 +45,21 @@ abstract class AOfficeSpreadsheet extends AExport
             });
 
             // header
-            if ($rowI === 0) {
+            if ($rowI === 1) {
                 $fields = [];
 
-                $colI = 0;
+                $colI = 1;
                 foreach ($line as $colKey => $col) {
-                    $sheet->setCellValueByColumnAndRow($rowI, $colI, $colKey);
+                    $sheet->setCellValueByColumnAndRow($colI, $rowI, $colKey);
                     $colI++;
                 }
 
                 $rowI++;
             }
 
-            $colI = 0;
+            $colI = 1;
             foreach ($line as $colKey => $col) {
-                $sheet->setCellValueByColumnAndRow($rowI, $colI, $col);
+                $sheet->setCellValueByColumnAndRow($colI, $rowI, $col);
                 $colI++;
             }
 
