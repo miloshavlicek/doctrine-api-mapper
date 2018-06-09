@@ -19,6 +19,7 @@ abstract class AExport
 
     protected function setHeaders()
     {
+        header('Access-Control-Allow-Origin: *');
         header('Content-Type: ' . $this->contentType);
         header('Content-Disposition: attachement; filename="' . $this->getFileName() . '";');
     }
