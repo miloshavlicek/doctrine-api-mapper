@@ -5,7 +5,7 @@ namespace Miloshavlicek\DoctrineApiMapper\Export;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class Xls extends AOfficeSpreadsheet
+class Xls extends AOfficeSpreadsheet implements IExport
 {
 
     /** @var string */

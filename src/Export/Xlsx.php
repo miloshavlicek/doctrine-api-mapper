@@ -2,7 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Export;
 
-class Xlsx extends AOfficeSpreadsheet
+class Xlsx extends AOfficeSpreadsheet implements IExport
 {
 
     /** @var string */

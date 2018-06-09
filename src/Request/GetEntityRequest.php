@@ -10,6 +10,7 @@ use Miloshavlicek\DoctrineApiMapper\Export\Excel;
 use Miloshavlicek\DoctrineApiMapper\Export\Html;
 use Miloshavlicek\DoctrineApiMapper\Export\Json;
 use Miloshavlicek\DoctrineApiMapper\Export\Ods;
+use Miloshavlicek\DoctrineApiMapper\Export\Pdf;
 use Miloshavlicek\DoctrineApiMapper\Export\Xls;
 use Miloshavlicek\DoctrineApiMapper\Export\Xlsx;
 use Miloshavlicek\DoctrineApiMapper\Mapper\ParamToEntityMethod;
@@ -184,22 +185,36 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
     private function processExport(string $type)
     {
-        if ($type === 'xlsx') {
-            $export = new Xlsx($this->out['result']);
-        } elseif ($type === 'xls') {
-            $export = new Xls($this->out['result']);
-        } elseif ($type === 'ods') {
-            $export = new Ods($this->out['result']);
-        } elseif ($type === 'csv') {
-            $export = new Csv($this->out['result']);
-        } elseif ($type === 'json') {
-            $export = new Json($this->out['result']);
-        } elseif ($type === 'html') {
-            $export = new Html($this->out['result']);
-        } else {
-            throw new BadRequestException(sprintf('Export to format %s is not supported.', $type));
+        try {
+            switch ($type) {
+                case 'xlsx':
+                    $export = new Xlsx($this->out['result']);
+                    break;
+                case 'xls':
+                    $export = new Xls($this->out['result']);
+                    break;
+                case 'ods':
+                    $export = new Ods($this->out['result']);
+                    break;
+                case 'csv':
+                    $export = new Csv($this->out['result']);
+                    break;
+                case 'json':
+                    $export = new Json($this->out['result']);
+                    break;
+                case 'html':
+                    $export = new Html($this->out['result']);
+                    break;
+                case 'pdf':
+                    $export = new Pdf($this->out['result']);
+                    break;
+                default:
+                    throw new BadRequestException(sprintf('Export to format %s is not supported.', $type));
+            }
+            $export->generateFile();
+        } finally {
+            unset($this->out['result']);
         }
-        $export->generateFile();
     }
 
 

@@ -21,7 +21,10 @@
     "symfony/yaml": ">=4.0"
   },
   "suggest": {
-    "phpoffice/phpspreadsheet": "For exports to xlsx."
+    "phpoffice/phpspreadsheet": "For exports to xlsx.",
+    "dompdf/dompdf": "For exports to PDF (LGPL) - Prefered.",
+    "tecnickcom/tcpdf": "For exports to PDF (LGPL) - Alternative.",
+    "mpdf/mpdf": "For exports to PDF (GPL) - Alternative only for open-source."
   },
   "require-dev": {
     "kutny/tracy-bundle": ">=1.11"

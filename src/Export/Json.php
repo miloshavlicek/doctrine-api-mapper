@@ -2,7 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Export;
 
-class Json extends AExport
+class Json extends AExport implements IExport
 {
 
     /** @var string */

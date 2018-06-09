@@ -2,6 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Export;
 
+use Miloshavlicek\DoctrineApiMapper\Exception\BadRequestException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
@@ -19,7 +20,16 @@ abstract class AOfficeSpreadsheet extends AExport
 
     public function __construct(array $data)
     {
+        $this->isSupported();
         $this->data = $data;
+    }
+
+    public function isSupported()
+    {
+        parent::isSupported();
+        if (!class_exists(Spreadsheet::class)) {
+            throw new BadRequestException('Format valid, but not Spreadsheet implemented!');
+        }
     }
 
     public function generateFile()

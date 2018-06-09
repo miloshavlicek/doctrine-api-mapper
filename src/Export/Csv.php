@@ -2,7 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Export;
 
-class Csv extends AExport
+class Csv extends AExport implements IExport
 {
 
     /** @var string */
