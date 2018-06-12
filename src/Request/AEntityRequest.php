@@ -3,7 +3,6 @@
 namespace Miloshavlicek\DoctrineApiMapper\Request;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\ORMException;
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Request\ParamFetcherInterface;
 use Miloshavlicek\DoctrineApiMapper\Entity\IPropertiesListEntity;
@@ -161,6 +160,7 @@ abstract class AEntityRequest
         $this->paramFetcher->addParam($dynamicParam);
 
         $filters = $this->paramFetcher->get($this->schema::FILTER_KEY);
+
         if ($filters) {
             foreach (explode(',', $filters) as $filterName) {
                 if ($filter = $this->repository->getFilter($filterName)) {
@@ -259,13 +259,16 @@ abstract class AEntityRequest
     }
 
     /**
-     * @param object $entity
+     * @param $entity
+     * @param bool $validateWrite
      * @return mixed
+     * @throws BadRequestException
+     * @throws InternalException
      */
-    protected function mapEntitySet($entity)
+    protected function mapEntitySet($entity, bool $validateWrite = true)
     {
         $params = $this->filterEntityNamesByPrefix();
-        $this->aclValidator->validateWrite($this->repository, array_keys($params), $this->getAcls(), $this->user);
+        $validateWrite && $this->aclValidator->validateWrite($this->repository, array_keys($params), $this->getAcls(), $this->user);
         return (new ParamToEntityMethod($entity, $this->repository->getEntityWriteProperties($this->getAcls()), $this->repository->getEntityJoins($this->getAcls())))->resolveSet($params);
     }
 

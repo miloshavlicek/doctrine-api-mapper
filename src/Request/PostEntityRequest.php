@@ -10,9 +10,11 @@ class PostEntityRequest extends AEntityRequest implements IEntityRequest
      */
     protected function solveIt(): void
     {
+        $this->aclValidator->validateCreate($this->repository, [], $this->user);
+
         $item = $this->repository->create();
 
-        $item = $this->mapEntitySet($item);
+        $item = $this->mapEntitySet($item, false);
 
         $this->em->persist($item);
         $this->em->flush($item);

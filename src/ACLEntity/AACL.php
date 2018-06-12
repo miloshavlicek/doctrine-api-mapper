@@ -13,7 +13,8 @@ class AACL
         'read' => [],
         'write' => [],
         'join' => [],
-        'delete' => []
+        'delete' => false,
+        'create' => false
     ];
 
     public function __construct()
@@ -56,6 +57,22 @@ class AACL
         return array_unique($this->solveAcl(['full', 'write'], $roles));
     }
 
+    public function getEntityCreatePermission(array $roles = []): bool
+    {
+        return $this->solveAclCreate($roles);
+    }
+
+    private function solveAclCreate(array $roles): bool
+    {
+        $roles[] = '*';
+        foreach ($roles as $role) {
+            if (isset($this->permissions['create'][$role]) && $this->permissions['create'][$role] === true) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function getEntityDeletePermission(array $roles = []): bool
     {
         return $this->solveAclDelete($roles);
@@ -92,6 +109,7 @@ class AACL
     protected function appendFullPermissions($roles)
     {
         $this->append('full', $roles, ['*']);
+        $this->append('create', $roles, true);
         $this->append('delete', $roles, true);
         $this->append('join', $roles, ['*']);
     }
@@ -128,7 +146,7 @@ class AACL
             $this->permissions[$permission][$role] = [];
         }
 
-        if ($permission === 'delete') {
+        if (in_array($permission, ['create', 'delete'])) {
             $this->permissions[$permission][$role] = $value;
         } else {
             $this->permissions[$permission][$role] = array_merge($this->permissions[$permission][$role], $value);

@@ -80,6 +80,21 @@ class ACLValidator
         $this->validate($baseRepository, 'write', $params, $acls, $user);
     }
 
+    public function validateCreate(IApiRepository $baseRepository, array $acls = [], $user = null)
+    {
+        if ($baseRepository->getAcl()) {
+            $acls['*'] = $baseRepository->getAcl();
+        }
+
+        foreach ($acls as $acl) {
+            if ($acl->getEntityCreatePermission($user ? $user->getRoles() : [])) {
+                return;
+            }
+        }
+
+        throw new AccessDeniedException($this->translator->trans('exception.insufficientPermissions', ['%param%' => $param], 'doctrine-api-mapper'));
+    }
+
     public function validateDelete(IApiRepository $baseRepository, array $acls = [], $user = null)
     {
         if ($baseRepository->getAcl()) {
