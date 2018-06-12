@@ -97,7 +97,8 @@ class AACL
     public function checkEntityJoin(array $roles = [], string $property): bool
     {
         if (!in_array($property, $this->joins)) {
-            throw new InternalException(sprintf('Join "%s" not found!', $property));
+            return false;
+            // throw new InternalException(sprintf('Join "%s" not found!', $property));
         }
 
         return in_array($property, $this->solveAcl(['join'], $roles));
