@@ -16,6 +16,7 @@ use Miloshavlicek\DoctrineApiMapper\Params\IParams;
 use Miloshavlicek\DoctrineApiMapper\Repository\IApiRepository;
 use Miloshavlicek\DoctrineApiMapper\Schema\DefaultSchema;
 use Miloshavlicek\DoctrineApiMapper\Service\ACLValidator;
+use Miloshavlicek\DoctrineApiMapper\Service\Output;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -27,11 +28,8 @@ abstract class AEntityRequest
     /** @var UserInterface|null */
     public $user;
 
-    /** @var array */
-    protected $out = [
-        'messages' => [],
-        'status' => true
-    ];
+    /** @var Output */
+    protected $out;
 
     /** @var IParams */
     protected $params;
@@ -78,6 +76,7 @@ abstract class AEntityRequest
         $user
     )
     {
+        $this->output = new Output();
         $this->paramFetcher = $paramFetcher;
         $this->params = new $params($paramFetcher, $user);
         $this->em = $em;
@@ -118,24 +117,18 @@ abstract class AEntityRequest
 
             $this->solveIt();
         } catch (AuthenticationException $e) {
-            $response['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.authRequired', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+            $this->out->addError($this->translator->trans('exception.authRequired', [], 'doctrine-api-mapper'), $e->getMessage());
         } catch (AccessDeniedException $e) {
-            $response['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.accessDenied', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+            $this->out->addError($this->translator->trans('exception.accessDenied', [], 'doctrine-api-mapper'), $e->getMessage());
         } catch (InternalException $e) {
-            $response['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.internalError', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+            $this->out->addError($this->translator->trans('exception.internalError', [], 'doctrine-api-mapper'), $e->getMessage());
         } catch (BadRequestException $e) {
-            $response['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.badRequest', [], 'doctrine-api-mapper'), 'text' => $e->getMessage()];
+            $this->out->addError($this->translator->trans('exception.badRequest', [], 'doctrine-api-mapper'), $e->getMessage());
         } catch (ORMException $e) {
-            $response['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.dbError', [], 'doctrine-api-mapper')];
-        } catch (\Exception $e) {
-            $response['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.unknown', [], 'doctrine-api-mapper')];
-        }
+            $this->out->addError($this->translator->trans('exception.dbError', [], 'doctrine-api-mapper'));
+        } /*catch (\Exception $e) {
+            $this->out->addError($this->translator->trans('exception.unknown', [], 'doctrine-api-mapper'));
+        } */
 
         return $this->getResponse();
     }
@@ -201,15 +194,13 @@ abstract class AEntityRequest
         if ($this->params && $this->params instanceof GetParams && $this->params->isShowUser()) {
             $this->processUser();
         }
-        return $this->schema::mapOutput($this->out);
+        return $this->schema::mapOutput($this->out->getResponse());
     }
 
     private function processUser()
     {
         if ($this->user) {
-            $this->out['user']['id'] = $this->user->getId();
-        } else {
-            $this->out['user'] = null;
+            $this->out->addUserInfo('id', $this->user->getId());
         }
     }
 
