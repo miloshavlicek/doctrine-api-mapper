@@ -1,6 +1,6 @@
 <?php
 
-namespace Miloshavlicek\DoctrineApiMapper\Model;
+namespace Miloshavlicek\DoctrineApiMapper\Model\Response;
 
 class Message
 {

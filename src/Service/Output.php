@@ -2,7 +2,7 @@
 
 namespace Miloshavlicek\DoctrineApiMapper\Service;
 
-use Miloshavlicek\DoctrineApiMapper\Model\Message;
+use Miloshavlicek\DoctrineApiMapper\Model\Response\Message;
 use Symfony\Component\Translation\TranslatorInterface;
 
 class Output
