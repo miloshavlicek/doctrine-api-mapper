@@ -73,10 +73,11 @@ abstract class AEntityRequest
         EntityManagerInterface $em,
         TranslatorInterface $translator,
         ACLValidator $aclValidator,
-        $user
+        $user,
+        Output $out
     )
     {
-        $this->output = new Output();
+        $this->out = $out;
         $this->paramFetcher = $paramFetcher;
         $this->params = new $params($paramFetcher, $user);
         $this->em = $em;
@@ -200,7 +201,7 @@ abstract class AEntityRequest
     private function processUser()
     {
         if ($this->user) {
-            $this->out->addUserInfo('id', $this->user->getId());
+            $this->out->setMetaProperty('user', ['id' => $this->user->getId()]);
         }
     }
 

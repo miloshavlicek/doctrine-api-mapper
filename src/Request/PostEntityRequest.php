@@ -19,8 +19,7 @@ class PostEntityRequest extends AEntityRequest implements IEntityRequest
         $this->em->persist($item);
         $this->em->flush($item);
 
-        $this->out['status'] = true;
-        $this->out['result']['id'] = $item->getId();
+        $this->out->addResult('id', $item->getId());
     }
 
 }

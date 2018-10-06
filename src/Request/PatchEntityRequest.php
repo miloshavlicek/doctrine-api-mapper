@@ -16,10 +16,8 @@ class PatchEntityRequest extends AEntityRequest implements IEntityRequest
             $item = $this->mapEntitySet($item);
             $this->em->persist($item);
             $this->em->flush($item);
-            $this->out['status'] = true;
         } else {
-            $this->out['status'] = false;
-            $this->out['messages'][] = ['type' => 'err', 'title' => $this->translator->trans('exception.itemNotFound', ['%id%' => $this->paramFetcher->get('id')], 'doctrine-api-mapper')];
+            $this->out->addError($this->translator->trans('exception.itemNotFound', ['%id%' => $this->paramFetcher->get('id')], 'doctrine-api-mapper'));
         }
     }
 

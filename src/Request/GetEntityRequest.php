@@ -48,7 +48,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
         if ($this->params->isShowCountInResult()) {
             // TODO: optimize
-            $this->out['x-total-count'] = count($qb->getQuery()->getResult());
+            $this->out->setMetaProperty('x-total-count', count($qb->getQuery()->getResult()));
         }
 
         if ($this->params->isShowPermissions()) {
@@ -66,6 +66,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
         if ($export = $this->params->getExport()) {
             $this->processExport($export);
+            $this->out->setResult(null);
         }
     }
 
@@ -141,12 +142,12 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $join = array_merge($join, $acl->getEntityJoinsPermissions($this->getUserRoles()));
         }
 
-        $this->out['permissions'] = [
+        $this->out->setMetaProperty('permissions', [
             'read' => $read,
             'write' => $write,
             'delete' => $delete,
             'join' => $join
-        ];
+        ]);
     }
 
     /**
@@ -160,7 +161,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
         try {
             $items = $this->singleResult ? [$q->getSingleResult()] : $q->getResult();
         } catch (NoResultException $e) {
-            $this->out['messages'][] = ['type' => 'warn', 'title' => $this->translator->trans('exception.noResults', [], 'doctrine-api-mapper')];
+            $this->out->addWarning($this->translator->trans('exception.noResults', [], 'doctrine-api-mapper'));
             $items = [];
         }
 
@@ -169,7 +170,7 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
             $res[] = $this->mapEntityGet($item, $this->params->getFields());
         }
 
-        $this->out['result'] = $res;
+        $this->out->setResult($res);
     }
 
     /**
@@ -185,36 +186,32 @@ class GetEntityRequest extends AEntityRequest implements IEntityRequest
 
     private function processExport(string $type)
     {
-        try {
-            switch ($type) {
-                case 'xlsx':
-                    $export = new Xlsx($this->out['result']);
-                    break;
-                case 'xls':
-                    $export = new Xls($this->out['result']);
-                    break;
-                case 'ods':
-                    $export = new Ods($this->out['result']);
-                    break;
-                case 'csv':
-                    $export = new Csv($this->out['result']);
-                    break;
-                case 'json':
-                    $export = new Json($this->out['result']);
-                    break;
-                case 'html':
-                    $export = new Html($this->out['result']);
-                    break;
-                case 'pdf':
-                    $export = new Pdf($this->out['result']);
-                    break;
-                default:
-                    throw new BadRequestException(sprintf('Export to format %s is not supported.', $type));
-            }
-            $export->generateFile();
-        } finally {
-            unset($this->out['result']);
+        switch ($type) {
+            case 'xlsx':
+                $export = new Xlsx($this->out->getResult());
+                break;
+            case 'xls':
+                $export = new Xls($this->out->getResult());
+                break;
+            case 'ods':
+                $export = new Ods($this->out->getResult());
+                break;
+            case 'csv':
+                $export = new Csv($this->out->getResult());
+                break;
+            case 'json':
+                $export = new Json($this->out->getResult());
+                break;
+            case 'html':
+                $export = new Html($this->out->getResult());
+                break;
+            case 'pdf':
+                $export = new Pdf($this->out->getResult());
+                break;
+            default:
+                throw new BadRequestException(sprintf('Export to format %s is not supported.', $type));
         }
+        $export->generateFile();
     }
 
 

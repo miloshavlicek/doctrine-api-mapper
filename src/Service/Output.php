@@ -16,7 +16,7 @@ class Output
         'status' => true,
         'messages' => [],
         'result' => null,
-        'user' => null
+        'meta' => []
     ];
 
     /**
@@ -60,6 +60,22 @@ class Output
     }
 
     /**
+     * @return mixed
+     */
+    public function getResult()
+    {
+        return $this->out['result'];
+    }
+
+    /**
+     * @param $result
+     */
+    public function setResult($result)
+    {
+        $this->out['result'] = $result;
+    }
+
+    /**
      * @param string $key
      * @param mexed $value
      */
@@ -69,12 +85,21 @@ class Output
     }
 
     /**
-     * @param string $key
-     * @param mexed $value
+     * @param string $prop
+     * @return null
      */
-    public function addUserInfo(string $key, $value)
+    public function getMetaProperty(string $prop)
     {
-        $this->out['user'][$key] = $value;
+        return $this->out['meta'][$prop] ?: null;
+    }
+
+    /**
+     * @param string $prop
+     * @param $value
+     */
+    public function setMetaProperty(string $prop, $value)
+    {
+        $this->out['meta'][$prop] = $value;
     }
 
     /**
